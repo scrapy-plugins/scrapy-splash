@@ -22,8 +22,8 @@ Download handler setup
 To enable the download handler add the following to your settings::
 
     DOWNLOAD_HANDLERS = {
-        'http': 'scrapyjs.WebkitDownloadHandler',
-        'https': 'scrapyjs.WebkitDownloadHandler',
+        'http': 'scrapyjs.dhandler.WebkitDownloadHandler',
+        'https': 'scrapyjs.dhandler.WebkitDownloadHandler',
     }
 
 And make sure Scrapy uses the gtk2 reactor on twisted, for example by adding
