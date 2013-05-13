@@ -72,5 +72,6 @@ Middleware cons:
 TODO
 ====
 
-Return WebView in response.meta, to support interaction and running custom
-javscript code from spider.
+- Return WebView in response.meta, to support interaction and running custom
+  javscript code from spider.
+- customer request header support?
