@@ -8,6 +8,8 @@ mechanisms:
 - a Scrapy download handler 
 - a Scrapy downloader middlware
 
+You only need to use ONE of them, not both.
+
 Requirements
 ============
 
