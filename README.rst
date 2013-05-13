@@ -8,6 +8,13 @@ mechanisms:
 - a Scrapy download handler 
 - a Scrapy downloader middlware
 
+Requirements
+============
+
+- python-gtk
+- python-webkit
+- python-jswebkit
+
 Usage
 =====
 
@@ -59,3 +66,9 @@ Middleware cons:
 
 - blocking API (it spawns a gtk loop for each request)
 
+
+TODO
+====
+
+Return WebView in response.meta, to support interaction and running custom
+javscript code from spider.
