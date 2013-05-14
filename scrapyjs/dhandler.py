@@ -23,7 +23,7 @@ class WebkitDownloadHandler(HttpDownloadHandler):
             webview.open(request.url)
             return d
         else:
-            return super(WebkitDownloadHanlder, self).download_request2(request, spider)
+            return super(WebkitDownloadHandler, self).download_request(request, spider)
 
     def _get_webview(self):
         webview = webkit.WebView()
