@@ -31,12 +31,15 @@ class WebkitDownloadHandler(HttpDownloadHandler):
         props.set_property('enable-java-applet', False)
         props.set_property('enable-plugins', False)
         props.set_property('enable-page-cache', False)
+        #props.set_property('enable-frame-flattening', True)
         return webview
 
     def _load_finished(self, deferred, view, frame):
+        if frame != view.get_main_frame():
+            return
         ctx = jswebkit.JSContext(frame.get_global_context())
         url = ctx.EvaluateScript('window.location.href')
-        html = ctx.EvaluateScript('document.body.innerHTML')
+        html = ctx.EvaluateScript('document.documentElement.innerHTML')
         response = HtmlResponse(url, encoding='utf-8', body=html.encode('utf-8'))
         deferred.callback(response)
 
