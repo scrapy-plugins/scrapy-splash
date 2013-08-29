@@ -13,7 +13,7 @@ You only need to use ONE of them, not both.
 Requirements
 ============
 
-- python-gtk
+- python-gtk2
 - python-webkit
 - python-jswebkit
 
