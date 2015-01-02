@@ -51,7 +51,7 @@ Handler cons:
 making Scrapy reactor type configurable.
 
 
-Downloader middlware setup
+Downloader middleware setup
 ==========================
 
 To enable the downloader middleware add the following to your settings.py::
