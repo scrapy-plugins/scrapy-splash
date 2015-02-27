@@ -6,7 +6,7 @@ ScrapyJS - Scrapy+JavaScript integration
    :target: http://travis-ci.org/scrapinghub/scrapyjs
 
 This library provides Scrapy+JavaScript integration using Splash_.
-The license is MIT.
+The license is BSD 3-clause.
 
 .. _Scrapy: https://github.com/scrapy/scrapy
 .. _Splash: https://github.com/scrapinghub/splash
