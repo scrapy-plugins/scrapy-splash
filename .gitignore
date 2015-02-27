@@ -1,0 +1,5 @@
+*.pyc
+.tox
+build
+dist
+scrapyjs.egg-info
