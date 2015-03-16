@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='scrapyjs',
-    version='0.1',
+    version='0.1.1',
     url='https://github.com/scrapinghub/scrapyjs',
     description='JavaScript support for Scrapy using Splash',
     long_description=open('README.rst').read(),
