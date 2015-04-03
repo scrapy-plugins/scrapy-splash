@@ -257,8 +257,16 @@ class SplashMiddleware(object):
     def _remote_keys(self):
         return self.crawler.spider.state[self.remote_keys_key]
 
+    def _get_splash_options(self, request, spider):
+        if request.meta.get("dont_proxy"):
+            return
+        spider_options = getattr(spider, "splash", {})
+        request_options = request.meta.get("splash")
+        return request_options or spider_options
+
     def process_request(self, request, spider):
-        if 'splash' not in request.meta:
+        splash_options = self._get_splash_options(request, spider)
+        if not splash_options:
             return
 
         if request.method not in {'GET', 'POST'}:
@@ -274,7 +282,6 @@ class SplashMiddleware(object):
             # don't process the same request more than once
             return
 
-        splash_options = request.meta['splash']
         request.meta['_splash_processed'] = True
 
         slot_policy = splash_options.get('slot_policy', self.slot_policy)
@@ -368,7 +375,7 @@ class SplashMiddleware(object):
         if not request.meta.get("_splash_processed"):
             return response
 
-        splash_options = request.meta['splash']
+        splash_options = self._get_splash_options(request, spider)
         if not splash_options:
             return response
 
