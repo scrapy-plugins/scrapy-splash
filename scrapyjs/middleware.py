@@ -8,6 +8,7 @@ from scrapy.exceptions import NotConfigured
 from scrapy import log
 from scrapy.http.headers import Headers
 
+from w3lib.http import basic_auth_header
 
 class SlotPolicy(object):
     PER_DOMAIN = 'per_domain'
@@ -31,6 +32,11 @@ class SplashMiddleware(object):
         self.crawler = crawler
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
+        self.splash_auth = None
+        user = crawler.settings.get('SPLASH_USER')
+        passwd = crawler.settings.get('SPLASH_PASS', '')
+        if user:
+            self.splash_auth = basic_auth_header(user, passwd)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -96,6 +102,9 @@ class SplashMiddleware(object):
             # are not respected.
             headers=Headers({'Content-Type': 'application/json'}),
         )
+
+        if self.splash_auth:
+            req_rep.headers['Authorization'] = self.splash_auth
 
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return req_rep
