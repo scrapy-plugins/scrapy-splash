@@ -118,20 +118,7 @@ class SplashMiddleware(object):
             self.crawler.stats.inc_value(
                 'splash/%s/response_count/%s' % (endpoint, response.status)
             )
-            response = self.html_response(response, request)
         return response
-
-    def html_response(self, response, request):
-        """Give user nice HTML response he probably
-        expects.
-        """
-        data = json.loads(response.body)
-        html = data.get("html")
-        if not html:
-            return response
-
-        return HtmlResponse(data["url"], body=html, encoding='utf8',
-                            status=response.status, request=request)
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:
