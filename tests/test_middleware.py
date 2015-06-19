@@ -783,3 +783,25 @@ def test_adjust_timeout():
     })
     req2 = mw.process_request(req2, None)
     assert req2.meta['download_timeout'] == 30
+
+
+def test_spider_attribute():
+    req_url = "http://scrapy.org"
+    req1 = scrapy.Request(req_url)
+
+    spider = scrapy.Spider("example")
+    spider.splash = {"args": {"images": 0}}
+
+    mw = _get_mw()
+    req1 = mw.process_request(req1, spider)
+    assert "_splash_processed" in req1.meta
+    assert "render.json" in req1.url
+    assert "url" in json.loads(req1.body)
+    assert json.loads(req1.body).get("url") == req_url
+    assert "images" in json.loads(req1.body)
+    assert req1.method == 'POST'
+
+    # spider attribute blank middleware disabled
+    spider.splash = {}
+    req2 = mw.process_request(req1, spider)
+    assert req2 is None
