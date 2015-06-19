@@ -6,7 +6,6 @@ from urlparse import urljoin
 from scrapy.exceptions import NotConfigured
 
 from scrapy import log
-from scrapy.http.response.html import HtmlResponse
 from scrapy.http.headers import Headers
 
 
