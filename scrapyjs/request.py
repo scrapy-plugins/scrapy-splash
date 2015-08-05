@@ -23,6 +23,11 @@ class SplashRequest(scrapy.Request):
             meta['splash'] = copy.deepcopy(self.default_splash_meta)
         super(SplashRequest, self).__init__(url, *args, meta=meta, **kwargs)
 
+    def replace(self, *args, **kwargs):
+        cls = super(SplashRequest, self).replace(*args, **kwargs)
+        cls._original_url = self._original_url
+        return cls
+
     def __str__(self):
         return "<%s %s %s>" % (self.method, self.url, self._original_url)
 

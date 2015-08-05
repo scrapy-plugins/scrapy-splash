@@ -36,8 +36,10 @@ class SplashMiddleware(object):
 
     @classmethod
     def from_crawler(cls, crawler):
-        splash_base_url = crawler.settings.get('SPLASH_URL', cls.default_splash_url)
-        slot_policy = crawler.settings.get('SPLASH_SLOT_POLICY', cls.default_policy)
+        splash_base_url = crawler.settings.get('SPLASH_URL',
+                                               cls.default_splash_url)
+        slot_policy = crawler.settings.get('SPLASH_SLOT_POLICY',
+                                           cls.default_policy)
 
         if slot_policy not in SlotPolicy._known:
             raise NotConfigured("Incorrect slot policy: %r" % slot_policy)
@@ -49,17 +51,20 @@ class SplashMiddleware(object):
         if not splash_options:
             return
 
+        if request.meta.get("_splash_processed"):
+            # don't process the same request more than once
+            return
+
         if request.method != 'GET':
             logger.warn(
-                "Currently only GET requests are supported by SplashMiddleware; "
-                "%(request)s will be handled without Splash",
+                "Currently only GET requests are supported by SplashMiddleware;"
+                " %(request)s will be handled without Splash",
                 {'request': request},
                 extra={'spider': spider}
             )
             return request
 
         meta = request.meta
-        del meta['splash']
         meta['_splash_processed'] = splash_options
 
         slot_policy = splash_options.get('slot_policy', self.slot_policy)
@@ -83,7 +88,9 @@ class SplashMiddleware(object):
             # But we can change Scrapy `download_timeout`: increase
             # it when it's too small. Decreasing `download_timeout` is not
             # safe.
-            timeout_current = meta.get('download_timeout', 1e6)  # no timeout means infinite timeout
+
+            # no timeout means infinite timeout
+            timeout_current = meta.get('download_timeout', 1e6)
             timeout_expected = float(args['timeout']) + self.splash_extra_timeout
 
             if timeout_expected > timeout_current:
@@ -131,4 +138,6 @@ class SplashMiddleware(object):
             pass
 
     def _get_slot_key(self, request_or_response):
-        return self.crawler.engine.downloader._get_slot_key(request_or_response, None)
+        return self.crawler.engine.downloader._get_slot_key(
+            request_or_response, None
+        )
