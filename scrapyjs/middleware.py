@@ -34,6 +34,14 @@ class SplashMiddleware(object):
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
 
+    def get_splash_options(self, request, spider):
+        if request.meta.get("dont_proxy"):
+            return
+
+        spider_options = getattr(spider, "splash", {})
+        request_options = request.meta.get("splash")
+        return request_options or spider_options
+
     @classmethod
     def from_crawler(cls, crawler):
         splash_base_url = crawler.settings.get('SPLASH_URL', cls.default_splash_url)
@@ -45,8 +53,11 @@ class SplashMiddleware(object):
         return cls(crawler, splash_base_url, slot_policy)
 
     def process_request(self, request, spider):
-        splash_options = request.meta.get('splash')
+        splash_options = self.get_splash_options(request, spider)
         if not splash_options:
+            return
+
+        elif request.meta.get("_splash_processed"):
             return
 
         if request.method != 'GET':
@@ -59,14 +70,13 @@ class SplashMiddleware(object):
             return request
 
         meta = request.meta
-        del meta['splash']
-        meta['_splash_processed'] = splash_options
 
         slot_policy = splash_options.get('slot_policy', self.slot_policy)
         self._set_download_slot(request, meta, slot_policy)
 
         args = splash_options.setdefault('args', {})
-        args.setdefault('url', request.url)
+        args['url'] = request.url
+
         body = json.dumps(args, ensure_ascii=False)
 
         if 'timeout' in args:
@@ -92,6 +102,7 @@ class SplashMiddleware(object):
         endpoint = splash_options.setdefault('endpoint', self.default_endpoint)
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
         splash_url = urljoin(splash_base_url, endpoint)
+        meta['_splash_processed'] = True
 
         req_rep = request.replace(
             url=splash_url,
@@ -102,18 +113,16 @@ class SplashMiddleware(object):
             # are not respected.
             headers=Headers({'Content-Type': 'application/json'}),
         )
-
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return req_rep
 
     def process_response(self, request, response, spider):
-        splash_options = request.meta.get("_splash_processed")
+        splash_options = self.get_splash_options(request, spider)
         if splash_options:
             endpoint = splash_options['endpoint']
             self.crawler.stats.inc_value(
                 'splash/%s/response_count/%s' % (endpoint, response.status)
             )
-
         return response
 
     def _set_download_slot(self, request, meta, slot_policy):
