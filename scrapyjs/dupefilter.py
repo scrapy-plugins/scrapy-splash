@@ -5,7 +5,12 @@ See https://github.com/scrapy/scrapy/issues/900 for more info.
 """
 from __future__ import absolute_import
 
-from scrapy.dupefilter import RFPDupeFilter
+try:
+    from scrapy.dupefilters import RFPDupeFilter
+except ImportError:
+    # scrapy < 1.0
+    from scrapy.dupefilter import RFPDupeFilter
+
 from scrapy.utils.request import request_fingerprint
 
 from .utils import dict_hash

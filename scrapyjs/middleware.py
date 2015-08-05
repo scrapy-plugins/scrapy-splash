@@ -3,10 +3,12 @@ from __future__ import absolute_import
 import json
 import logging
 from urlparse import urljoin
-from scrapy.exceptions import NotConfigured
 
-from scrapy import log
+from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
+
+
+logger = logging.getLogger(__name__)
 
 
 class SlotPolicy(object):
@@ -48,8 +50,12 @@ class SplashMiddleware(object):
             return
 
         if request.method != 'GET':
-            log.msg("Currently only GET requests are supported by SplashMiddleware; %s "
-                    "will be handled without Splash" % request, logging.WARNING)
+            logger.warn(
+                "Currently only GET requests are supported by SplashMiddleware; "
+                "%(request)s will be handled without Splash",
+                {'request': request},
+                extra={'spider': spider}
+            )
             return request
 
         meta = request.meta

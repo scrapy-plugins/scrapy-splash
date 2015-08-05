@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from urlparse import urljoin
 import json
 
 import scrapy
-from scrapy.contrib.linkextractors import LinkExtractor
+from scrapy.linkextractors import LinkExtractor
 
 
 class DmozSpider(scrapy.Spider):
@@ -14,8 +13,7 @@ class DmozSpider(scrapy.Spider):
     def parse(self, response):
         le = LinkExtractor()
         for link in le.extract_links(response):
-            url = urljoin(response.url, link.url)
-            yield scrapy.Request(url, self.parse_link, meta={
+            yield scrapy.Request(link.url, self.parse_link, meta={
                 'splash': {
                     'args': {'har': 1, 'html': 0},
                 }

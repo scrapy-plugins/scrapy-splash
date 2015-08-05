@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import pytest
 import scrapy
-from scrapy.dupefilter import request_fingerprint
+from scrapy.dupefilters import request_fingerprint
 
 from scrapyjs.dupefilter import splash_request_fingerprint
 from scrapyjs.utils import dict_hash
