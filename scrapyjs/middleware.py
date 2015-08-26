@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+import re
+import os
 import json
 import logging
 from urlparse import urljoin
 
-from scrapy.exceptions import NotConfigured
+from scrapy.exceptions import NotConfigured, NotSupported
 from scrapy.http.headers import Headers
 
+_crawlera_proxy_re = re.compile('(?:https?://)?(\w+\.crawlera\.com)(?::(\d+))?')
 
 logger = logging.getLogger(__name__)
-
 
 class SlotPolicy(object):
     PER_DOMAIN = 'per_domain'
@@ -28,6 +30,7 @@ class SplashMiddleware(object):
     default_endpoint = "render.json"
     splash_extra_timeout = 5.0
     default_policy = SlotPolicy.PER_DOMAIN
+    _cached_crawlera_script = None
 
     def __init__(self, crawler, splash_base_url, slot_policy):
         self.crawler = crawler
@@ -72,6 +75,44 @@ class SplashMiddleware(object):
 
         args = splash_options.setdefault('args', {})
         args.setdefault('url', request.url)
+
+        headers = args.setdefault('headers', Headers())
+        for name, value in request.headers.items():
+            if name not in headers:
+                # Send this header to the remote site instead of to splash
+                headers[name] = value
+
+
+        proxy = meta.get('proxy')
+        crawlera_proxy = proxy and _crawlera_proxy_re.match(proxy)
+        if proxy:
+            del meta['proxy']
+            if crawlera_proxy:
+                self._check_crawlera_settings(splash_options)
+
+                # prevent crawlera middleware form processing again this request
+                meta['dont_proxy'] = True
+
+                crawlera_settings = args.setdefault('crawlera', {})
+                crawlera_headers = crawlera_settings.setdefault('headers', Headers())
+                for name in headers.keys():
+                    if name.startswith('Proxy-') or name.startswith('X-Crawlera-'):
+                        # Use header for every request instead of just the first one.
+                        crawlera_headers[name] = headers.pop(name)
+
+                crawlera_settings['host'] = crawlera_proxy.group(1)
+                crawlera_settings['port'] = crawlera_proxy.group(2)
+                splash_options['endpoint'] = 'execute'
+                args['lua_source'] = self._get_crawlera_script()
+            else:
+                # Pass proxy as a parameter to splash. Note that padding a
+                # proxy url here is only available on splash >= 1.8
+                if "://" not in proxy:
+                    # Support for host:port without protocol
+                    proxy = "http://" + proxy
+
+                args['proxy'] = proxy
+
         body = json.dumps(args, ensure_ascii=False)
 
         if 'timeout' in args:
@@ -96,7 +137,11 @@ class SplashMiddleware(object):
             if timeout_expected > timeout_current:
                 meta['download_timeout'] = timeout_expected
 
-        endpoint = splash_options.setdefault('endpoint', self.default_endpoint)
+        if crawlera_proxy:
+            endpoint = "execute"
+        else:
+            endpoint = splash_options.setdefault('endpoint', self.default_endpoint)
+
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
         splash_url = urljoin(splash_base_url, endpoint)
 
@@ -104,9 +149,6 @@ class SplashMiddleware(object):
             url=splash_url,
             method='POST',
             body=body,
-
-            # FIXME: original HTTP headers (including cookies)
-            # are not respected.
             headers=Headers({'Content-Type': 'application/json'}),
         )
 
@@ -122,6 +164,44 @@ class SplashMiddleware(object):
             )
 
         return response
+
+    def _check_crawlera_settings(self, splash_settings):
+        # When using crawlera with splash we use a script to configure it
+        # properly, but that means that some options that can be used in
+        # render.html can't be used anymore.
+
+        if splash_settings.get('endpoint', 'render.html') != 'render.html':
+            raise NotSupported("Splash + Crawlera integration is only "
+                "implemented for the render.html endpoint")
+
+        splash_args = splash_settings.get('args', {})
+        not_implemented_options = { # option: (allowed values, ...)
+            'js': (None, ''),
+            'allowed_content_types': (None, ''),
+            'forbidden_content_types': (None, ''),
+            'images': (True, 1),
+        }
+        for option, allowed in not_implemented_options.items():
+            if option in splash_args and splash_args[option] not in allowed:
+                raise NotSupported(
+                    "Splash option '%s' is not compatible with Crawlera" % option
+                )
+
+    def _get_crawlera_script(self):
+        if self._cached_crawlera_script:
+            return self._cached_crawlera_script
+
+        script_path = os.path.join(os.path.dirname(__file__), 'crawlera.lua')
+        if not os.path.exists(script_path):
+            raise IOError(
+                'File %s necessary for Crawlera+Splash integration not found' % script_path
+            )
+
+        with open(script_path, 'r') as f:
+            self._cached_crawlera_script = f.read()
+
+        return self._cached_crawlera_script
+
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:
