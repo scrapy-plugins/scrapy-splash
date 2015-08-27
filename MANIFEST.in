@@ -1,5 +1,6 @@
 include *.txt
 include *.rst
 include tox.ini
+include scrapyjs/crawlera.lua
 recursive-include tests *.py
 recursive-include example *.py *.cfg

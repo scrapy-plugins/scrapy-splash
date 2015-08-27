@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 import copy
 import json
+import re
 
 import scrapy
 from scrapy.core.engine import ExecutionEngine
@@ -10,6 +11,7 @@ from scrapy.utils.test import get_crawler
 import scrapyjs
 from scrapyjs.middleware import SplashMiddleware
 from scrapyjs.request import SplashRequest
+from scrapy.exceptions import NotSupported
 
 
 def _get_mw():
@@ -153,3 +155,63 @@ def test_adjust_timeout():
     })
     req2 = mw.process_request(req2, None)
     assert req2.meta['download_timeout'] == 30
+
+
+def test_crawlera():
+    mw = _get_mw()
+    req = SplashRequest("http://example.com?foo=bar&url=1&wait=100", meta={
+        "proxy": 'subdomain.crawlera.com:1234',
+        "endpoint": "render.html",
+    })
+    req.headers['X-Crawlera-Foo'] = 'foo'
+    req.headers['Proxy-Authenticate'] = 'Basic foo'
+    req2 = mw.process_request(req, None)
+    assert req2.url == "http://127.0.0.1:8050/execute", "render.html endpoint gets emulated with lua script"
+    assert req2.headers == {'Content-Type': ['application/json']}
+    assert req2.method == 'POST'
+    expected_body = {
+        'url': req.url,
+        'lua_source': mw._cached_crawlera_script,
+        'crawlera': {
+            "headers": {
+                "X-Crawlera-Foo": "foo",
+                'Proxy-Authenticate': 'Basic foo'
+            },
+            "host": 'subdomain.crawlera.com',
+            "port": 1234,
+        },
+        'wait': 0.5
+    }
+    expected_body.update(SplashRequest.default_splash_meta['args'])
+    assert json.loads(req2.body) == expected_body
+
+
+def test_crawlera_not_supported():
+    mw = _get_mw()
+    req = SplashRequest("http://example.com?foo=bar&url=1&wait=100", meta={
+        "proxy": 'subdomain.crawlera.com:1234',
+        "splash": {
+            "endpoint": "render.png",
+        }
+    })
+    try:
+        mw.process_request(req, None)
+    except NotSupported:
+        pass # expected
+    else:
+        raise Exception('NotSupported was expected')
+
+    req = SplashRequest("http://example.com?foo=bar&url=1&wait=100", meta={
+        "proxy": 'subdomain.crawlera.com:1234',
+        "splash": {
+            "args": {
+                "images": 0,
+            }
+        }
+    })
+    try:
+        mw.process_request(req, None)
+    except NotSupported:
+        pass # expected
+    else:
+        raise Exception('NotSupported was expected')

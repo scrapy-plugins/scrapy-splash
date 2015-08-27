@@ -13,6 +13,7 @@ _crawlera_proxy_re = re.compile('(?:https?://)?(\w+\.crawlera\.com)(?::(\d+))?')
 
 logger = logging.getLogger(__name__)
 
+
 class SlotPolicy(object):
     PER_DOMAIN = 'per_domain'
     SINGLE_SLOT = 'single_slot'
@@ -76,13 +77,6 @@ class SplashMiddleware(object):
         args = splash_options.setdefault('args', {})
         args.setdefault('url', request.url)
 
-        headers = args.setdefault('headers', Headers())
-        for name, value in request.headers.items():
-            if name not in headers:
-                # Send this header to the remote site instead of to splash
-                headers[name] = value
-
-
         proxy = meta.get('proxy')
         crawlera_proxy = proxy and _crawlera_proxy_re.match(proxy)
         if proxy:
@@ -90,19 +84,18 @@ class SplashMiddleware(object):
             if crawlera_proxy:
                 self._check_crawlera_settings(splash_options)
 
-                # prevent crawlera middleware form processing again this request
+                # prevent crawlera middleware form processing the splash request
                 meta['dont_proxy'] = True
 
                 crawlera_settings = args.setdefault('crawlera', {})
                 crawlera_headers = crawlera_settings.setdefault('headers', Headers())
-                for name in headers.keys():
+                for name in request.headers.keys():
                     if name.startswith('Proxy-') or name.startswith('X-Crawlera-'):
                         # Use header for every request instead of just the first one.
-                        crawlera_headers[name] = headers.pop(name)
+                        crawlera_headers[name] = request.headers.pop(name)
 
                 crawlera_settings['host'] = crawlera_proxy.group(1)
-                crawlera_settings['port'] = crawlera_proxy.group(2)
-                splash_options['endpoint'] = 'execute'
+                crawlera_settings['port'] = int(crawlera_proxy.group(2))
                 args['lua_source'] = self._get_crawlera_script()
             else:
                 # Pass proxy as a parameter to splash. Note that padding a
@@ -112,6 +105,7 @@ class SplashMiddleware(object):
                     proxy = "http://" + proxy
 
                 args['proxy'] = proxy
+
 
         body = json.dumps(args, ensure_ascii=False)
 
@@ -149,6 +143,9 @@ class SplashMiddleware(object):
             url=splash_url,
             method='POST',
             body=body,
+
+            # FIXME: original HTTP headers (including cookies)
+            # are not respected.
             headers=Headers({'Content-Type': 'application/json'}),
         )
 

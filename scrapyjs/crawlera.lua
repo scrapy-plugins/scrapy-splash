@@ -1,10 +1,14 @@
+sub = string.sub
+find = string.find
+upper = string.upper
+lower = string.lower
 
 function parse_viewport(viewport)
     -- Splash lua has no regex support, if added, /\d+x\d+/
-    local sep = viewport:find("x")
+    local sep = find(viewport, "x")
     if sep then
-        width = tonumber(viewport:sub(1, sep-1))
-        height = tonumber(viewport:sub(sep+1, #viewport))
+        local width = tonumber(sub(viewport, 1, sep-1))
+        local height = tonumber(sub(viewport, sep+1, #viewport))
         if width and height then
             return {width, height}
         end
@@ -12,14 +16,36 @@ function parse_viewport(viewport)
     return nil
 end
 
+-- x-FOO-bAr -> X-Foo-Bar
+function normalize_header(name)
+    name = upper(sub(name, 1, 1)) .. lower(sub(name, 2))
+    while true do
+        local start,fin = find(name, '-[a-z]')
+        if start ~= nil then
+            name = sub(name, 1, start) .. upper(sub(name, fin, fin)) .. sub(name, fin+1)
+        else
+            break
+        end
+    end
+    return name
+end
+
+function normalize_headers(headers)
+    local res = {}
+    for name,value in pairs(headers) do
+        res[normalize_header(name)] = value
+    end
+    return res
+
+end
+
 function main(splash)
     local args = splash.args
     local crawlera = args.crawlera or {}
     local host = crawlera.host or 'proxy.crawlera.com'
     local port = crawlera.port or 8010
-    local subrequest_headers = crawlera.subrequest_headers or {}
-    local allrequest_headers = crawlera.headers or {}
-    local firstrequest_headers = args.headers or {}
+    local subrequest_headers = normalize_headers(crawlera.subrequest_headers or {})
+    local allrequest_headers = normalize_headers(crawlera.headers or {})
 
     local session_header = "X-Crawlera-Session"
     local session_id = "create"
@@ -27,11 +53,11 @@ function main(splash)
     splash:on_request(function (request)
         if session_id ~= 'create' then
             -- Set subresource request headers
-            for key,value in pairs(subrequest_headers) do
+            for name, value in pairs(subrequest_headers) do
                 request:set_header(name, value)
             end
         end
-        for key,value in pairs(allrequest_headers) do
+        for name, value in pairs(allrequest_headers) do
             request:set_header(name, value)
         end
 
@@ -45,15 +71,17 @@ function main(splash)
     end)
 
     splash:on_response_headers(function (response)
-        if type(response.headers[session_header]) ~= nil then
-            session_id = response.headers[session_header]
+        for name, value in pairs(response.headers) do
+            name = normalize_header(name)
+            if name == session_header then
+                session_id = value
+            elseif name == "Retry-After" or sub(name, 1, 11) == 'X-Crawlera-' then
+                splash:set_result_header(name, value)
+            end
         end
     end)
 
     -- Implement some of the arguments to render.html
-
-    splash:set_custom_headers(firstrequest_headers)
-
     if type(args.viewport) == 'string' then
         local width, height = parse_viewport(args.viewport)
         if width and height then
@@ -61,7 +89,15 @@ function main(splash)
         end
     end
 
-    assert(splash:go{args.url, baseurl=args.baseurl, headers=args.headers})
+    local ok, err = splash:go{args.url, baseurl=args.baseurl, headers=args.headers}
+    if not ok then
+        -- Send crawleras response code with the response if possible
+        if sub(err, 1, 4) == "http" and splash.set_result_status_code ~= nil then
+            splash:set_result_status_code(tonumber(sub(err, 5, 7)))
+        else
+            error('Splash error ' .. err)
+        end
+    end
 
     if args.viewport == 'full' or args.render_all then
         splash:set_viewport_full()
@@ -74,6 +110,8 @@ function main(splash)
     if type(args.js_source) == 'string' then
         splash:runjs(args.js_source)
     end
+
+    splash:set_result_content_type("text/html; charset=utf-8")
 
     return splash:html()
 end

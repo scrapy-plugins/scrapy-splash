@@ -246,6 +246,31 @@ Run a simple `Splash Lua Script`_::
 
 .. _Splash Lua Script: http://splash.readthedocs.org/en/latest/scripting-tutorial.html
 
+Proxies
+=======
+
+When a proxy is set in a request (via ``request.meta["proxy"]``) before the
+request it's processed by the middleware, the value it's moved to the ``proxy``
+splash argument and removed from the request, so that splash will use that
+proxy to connect to the page.
+
+To set the proxy that needs to be used to connect to splash, set the
+``request.meta["proxy"]`` in a middleware configured to run after
+SplashMiddleware. Note that by default the proxy middleware is enabled and will
+run after SplashMiddleware, so by default it will use your configured system
+proxy or the ``HTTP_PROXY`` environment variable to connect to splash.
+
+When using this SplashMiddleware with Crawlera_ as a proxy, it will rewrite the
+arguments to use the ``/execute`` endpoint and send a `lua script`_ that creates a
+`Crawlera session`_ and uses it to load the page's sub-resources. The
+script is mostly compatible with splash's ``render.html`` endpoint, but only a
+subset of the options are available: ``filters``, ``timeout``,
+``allowed_domains``, ``headers``, ``baseurl``, ``viewport``, ``wait`` and
+``js_source``.
+
+.. _lua script: https://github.com/scrapinghub/scrapyjs/blob/master/scrapyjs/crawlera.lua
+.. _Crawlera: http://scrapinghub.com/crawlera/
+.. _Crawlera session: http://doc.scrapinghub.com/crawlera.html#x-crawlera-session
 
 Contributing
 ============
