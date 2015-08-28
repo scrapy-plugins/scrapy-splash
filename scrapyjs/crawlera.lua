@@ -50,6 +50,10 @@ function main(splash)
     local session_header = "X-Crawlera-Session"
     local session_id = "create"
 
+    if splash.on_response_headers == nil then
+        error("Splash 1.7 is required for Crawlera integration")
+    end
+
     splash:on_request(function (request)
         if session_id ~= 'create' then
             -- Set subresource request headers
