@@ -107,6 +107,10 @@ function main(splash)
         splash:set_viewport_full()
     end
 
+    if args.images ~= nil then
+        splash.images_enabled = args.images
+    end
+
     if type(args.wait) == 'number' then
         splash:wait(args.wait)
     end

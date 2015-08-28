@@ -265,7 +265,7 @@ arguments to use the ``/execute`` endpoint and send a `lua script`_ that creates
 `Crawlera session`_ and uses it to load the page's sub-resources. The
 script is mostly compatible with splash's ``render.html`` endpoint, but only a
 subset of the options are available: ``filters``, ``timeout``,
-``allowed_domains``, ``headers``, ``baseurl``, ``viewport``, ``wait`` and
+``allowed_domains``, ``headers``, ``baseurl``, ``viewport``, ``wait``, ``images`` and
 ``js_source``.
 
 .. _lua script: https://github.com/scrapinghub/scrapyjs/blob/master/scrapyjs/crawlera.lua

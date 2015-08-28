@@ -176,7 +176,6 @@ class SplashMiddleware(object):
             'js': (None, ''),
             'allowed_content_types': (None, ''),
             'forbidden_content_types': (None, ''),
-            'images': (True, 1),
         }
         for option, allowed in not_implemented_options.items():
             if option in splash_args and splash_args[option] not in allowed:

@@ -205,7 +205,7 @@ def test_crawlera_not_supported():
         "proxy": 'subdomain.crawlera.com:1234',
         "splash": {
             "args": {
-                "images": 0,
+                "js": "js_profile_foo",
             }
         }
     })
