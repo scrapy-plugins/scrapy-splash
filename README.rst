@@ -1,11 +1,11 @@
-========================================
-ScrapyJS - Scrapy+JavaScript integration
-========================================
+=========================================================
+ScrapyJS - Scrapy & JavaScript integration through Splash
+=========================================================
 
-.. image:: https://travis-ci.org/scrapinghub/scrapyjs.svg?branch=master
-   :target: http://travis-ci.org/scrapinghub/scrapyjs
+.. image:: https://travis-ci.org/scrapinghub/scrapy-splash.svg?branch=master
+   :target: http://travis-ci.org/scrapinghub/scrapy-splash
 
-This library provides Scrapy+JavaScript integration using Splash_.
+This library provides Scrapy_ and JavaScript integration using Splash_.
 The license is BSD 3-clause.
 
 .. _Scrapy: https://github.com/scrapy/scrapy
@@ -19,7 +19,7 @@ Install ScrapyJS using pip::
     $ pip install scrapyjs
 
 ScrapyJS uses Splash_ HTTP API, so you also need a Splash instance.
-Usually to install & run Splash something like this is enough::
+Usually to install & run Splash, something like this is enough::
 
     $ docker run -p 8050:8050 scrapinghub/splash
 
@@ -27,73 +27,26 @@ Check Splash `install docs`_ for more info.
 
 .. _install docs: http://splash.readthedocs.org/en/latest/install.html
 
-Scrapy+Splash
-=============
-
-To process JavaScript from Scrapy spiders one can use Splash `HTTP API`_
-directly, without SrapyJS. For example, let's fetch HTML of a webpage,
-as returned by a browser::
-
-    import json
-
-    import scrapy
-    from scrapy.http.headers import Headers
-
-    RENDER_HTML_URL = "http://127.0.0.1:8050/render.html"
-
-    class MySpider(scrapy.Spider):
-        start_urls = ["http://example.com", "http://example.com/foo"]
-
-        def start_requests(self):
-            for url in self.start_urls:
-                body = json.dumps({"url": url, "wait": 0.5})
-                headers = Headers({'Content-Type': 'application/json'})
-                yield scrapy.Request(RENDER_HTML_URL, self.parse, method="POST",
-                                     body=body, headers=headers)
-
-        def parse(self, response):
-            # response.body is a result of render.html call; it
-            # contains HTML processed by a browser.
-            # ...
-
-.. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
-
-It was easy enough, but the code has some problems:
-
-1. There is a bit of biolerplate.
-
-2. As seen by Scrapy, we're sending requests to RENDER_HTML_URL instead
-   of the target URLs. It affects concurrency and politeness settings:
-   ``CONCURRENT_REQUESTS_PER_DOMAIN``, ``DOWNLOAD_DELAY``, etc could work
-   in unexpected way as delays and concurrency settings are no longer
-   per-domain.
-
-3. Some options depend on each other - for example, if you use timeout_
-   Splash option then you may want to set ``download_timeout``
-   scrapy.Request meta key as well.
-
-ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
-
-.. _timeout: http://splash.readthedocs.org/en/latest/api.html#arg-timeout
-
 
 Configuration
 =============
 
-1. Put Splash server address to settings.py of your Scrapy project like this::
+1. Add the Splash server address to ``settings.py`` of your Scrapy project like this::
 
       SPLASH_URL = 'http://192.168.59.103:8050'
 
-2. Enable the middleware by adding it to ``DOWNLOADER_MIDDLEWARES``::
+2. Enable the Splash middleware by adding it to ``DOWNLOADER_MIDDLEWARES`` in your ``settings.py`` file::
 
       DOWNLOADER_MIDDLEWARES = {
           'scrapyjs.SplashMiddleware': 725,
       }
 
+.. note::
+
    Order `725` is just before `HttpProxyMiddleware` (750) in default
    scrapy settings.
 
-3. You also have to set a custom DUPEFILTER_CLASS::
+3. Set a custom ``DUPEFILTER_CLASS``::
 
       DUPEFILTER_CLASS = 'scrapyjs.SplashAwareDupeFilter'
 
@@ -112,10 +65,11 @@ Configuration
     to override request fingerprints calculation algorithm globally; this
     could change in future.
 
+
 Usage
 =====
 
-To render the requests with Splash use 'splash' Request meta key::
+To render the requests with Splash, use the ``'splash'`` Request `meta` key::
 
     yield Request(url, self.parse_result, meta={
         'splash': {
@@ -146,10 +100,10 @@ To render the requests with Splash use 'splash' Request meta key::
 
 .. _HTTP API docs: http://splash.readthedocs.org/en/latest/api.html
 
-* ``meta['splash']['splash_url']`` allows to override Splash URL set
-  in settings.py.
+* ``meta['splash']['splash_url']`` overrides the Splash URL set
+  in ``settings.py``.
 
-* ``meta['splash']['slot_policy']`` allows to customize how
+* ``meta['splash']['slot_policy']`` customize how
   concurrency & politeness are maintained for Splash requests.
 
   Currently there are 3 policies available:
@@ -163,8 +117,9 @@ To render the requests with Splash use 'splash' Request meta key::
      to Splash.
 
   3. ``scrapyjs.SlotPolicy.SCRAPY_DEFAULT`` - don't do anything with slots.
-     It is similar to SINGLE_SLOT policy, but can be different if you access
+     It is similar to ``SINGLE_SLOT`` policy, but can be different if you access
      other services on the same address as Splash.
+
 
 Examples
 ========
@@ -245,6 +200,55 @@ Run a simple `Splash Lua Script`_::
 
 
 .. _Splash Lua Script: http://splash.readthedocs.org/en/latest/scripting-tutorial.html
+
+
+Why not use the Splash HTTP API directly?
+=========================================
+
+The obvious alternative to ScrapyJS would be to send requests directly to the Splash `HTTP API`_. Take a look at the example below and make sure to read the observations after it::
+
+    import json
+
+    import scrapy
+    from scrapy.http.headers import Headers
+
+    RENDER_HTML_URL = "http://127.0.0.1:8050/render.html"
+
+    class MySpider(scrapy.Spider):
+        start_urls = ["http://example.com", "http://example.com/foo"]
+
+        def start_requests(self):
+            for url in self.start_urls:
+                body = json.dumps({"url": url, "wait": 0.5})
+                headers = Headers({'Content-Type': 'application/json'})
+                yield scrapy.Request(RENDER_HTML_URL, self.parse, method="POST",
+                                     body=body, headers=headers)
+
+        def parse(self, response):
+            # response.body is a result of render.html call; it
+            # contains HTML processed by a browser.
+            # ...
+
+
+It works and is easy enough, **but there are some issues that you should be aware of**:
+
+1. There is a bit of boilerplate.
+
+2. As seen by Scrapy, we're sending requests to ``RENDER_HTML_URL`` instead
+   of the target URLs. It affects concurrency and politeness settings:
+   ``CONCURRENT_REQUESTS_PER_DOMAIN``, ``DOWNLOAD_DELAY``, etc could behave
+   in unexpected ways since delays and concurrency settings are no longer
+   per-domain.
+
+3. Some options depend on each other - for example, if you use timeout_
+   Splash option then you may want to set ``download_timeout``
+   scrapy.Request meta key as well.
+
+ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
+
+.. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
+.. _timeout: http://splash.readthedocs.org/en/latest/api.html#arg-timeout
+
 
 
 Contributing
