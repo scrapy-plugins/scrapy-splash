@@ -26,5 +26,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    requires=['scrapy'],
+    install_requires=['scrapy'],
 )
