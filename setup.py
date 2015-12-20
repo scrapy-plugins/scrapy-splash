@@ -26,5 +26,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
+    package_data={'': ['scrapyjs/crawlera.lua']},
+    include_package_data=True,
     requires=['scrapy'],
 )
