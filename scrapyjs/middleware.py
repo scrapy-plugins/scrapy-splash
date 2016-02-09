@@ -2,7 +2,10 @@
 from __future__ import absolute_import
 import json
 import logging
-from urlparse import urljoin
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    from urlparse import urljoin
 
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
