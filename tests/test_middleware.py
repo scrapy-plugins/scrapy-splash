@@ -6,6 +6,10 @@ import json
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
+try:
+    from scrapy.utils.python import to_native_str
+except ImportError:
+    from scrapy.utils.python import str_to_unicode as to_native_str
 
 import scrapyjs
 from scrapyjs.middleware import SplashMiddleware
@@ -39,12 +43,12 @@ def test_splash_request():
     assert req2 is not None
     assert req2 is not req
     assert req2.url == "http://127.0.0.1:8050/render.html"
-    assert req2.headers == {'Content-Type': ['application/json']}
+    assert req2.headers == {b'Content-Type': [b'application/json']}
     assert req2.method == 'POST'
 
     expected_body = {'url': req.url}
     expected_body.update(SplashRequest.default_splash_meta['args'])
-    assert json.loads(req2.body) == expected_body
+    assert json.loads(to_native_str(req2.body)) == expected_body
 
 
 def test_splash_request_no_url():
@@ -56,7 +60,7 @@ def test_splash_request_no_url():
     }})
     req = mw.process_request(req1, None)
     assert req.url == 'http://127.0.0.1:8050/execute'
-    assert json.loads(req.body) == {
+    assert json.loads(to_native_str(req.body)) == {
         'url': 'about:blank',
         'lua_source': lua_source
     }
@@ -72,7 +76,7 @@ def test_override_splash_url():
     })
     req = mw.process_request(req1, None)
     assert req.url == 'http://splash.example.com/render.png'
-    assert json.loads(req.body) == {'url': req1.url}
+    assert json.loads(to_native_str(req.body)) == {'url': req1.url}
 
 
 def test_float_wait_arg():
@@ -84,7 +88,7 @@ def test_float_wait_arg():
         }
     })
     req = mw.process_request(req1, None)
-    assert json.loads(req.body) == {'url': req1.url, 'wait': 0.5}
+    assert json.loads(to_native_str(req.body)) == {'url': req1.url, 'wait': 0.5}
 
 
 

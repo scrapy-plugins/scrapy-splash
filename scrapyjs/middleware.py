@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import json
 import logging
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
