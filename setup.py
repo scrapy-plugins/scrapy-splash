@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     name='scrapyjs',
     version='0.1.1',
-    url='https://github.com/scrapinghub/scrapyjs',
+    url='https://github.com/scrapy-plugins/scrapy-splash',
     description='JavaScript support for Scrapy using Splash',
     long_description=open('README.rst').read(),
     author='Scrapy developer',
