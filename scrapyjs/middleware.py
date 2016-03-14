@@ -100,14 +100,13 @@ class SplashMiddleware(object):
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
         splash_url = urljoin(splash_base_url, endpoint)
 
+        new_headers = request.headers.copy()
+        new_headers.update({'Content-Type': 'application/json'})
         req_rep = request.replace(
             url=splash_url,
             method='POST',
             body=body,
-
-            # FIXME: original HTTP headers (including cookies)
-            # are not respected.
-            headers=Headers({'Content-Type': 'application/json'}),
+            headers=new_headers,
         )
 
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
