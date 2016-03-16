@@ -35,9 +35,9 @@ class SplashMiddleware(object):
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
         self.splash_auth = None
-        user = crawler.settings.get('SPLASH_USER')
-        passwd = crawler.settings.get('SPLASH_PASS', '')
-        if user:
+        user = crawler.settings.get('SPLASH_USER') or ''
+        passwd = crawler.settings.get('SPLASH_PASS') or ''
+        if user or passwd:
             self.splash_auth = basic_auth_header(user, passwd)
 
     @classmethod

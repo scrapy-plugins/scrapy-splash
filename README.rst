@@ -106,6 +106,12 @@ Configuration
    replace all ``scrapy.util.request.request_fingerprint`` calls with
    ``scrapyjs.splash_request_fingerprint``.
 
+5. If you need to use HTTP Basic Authentication to access splash, use the
+   ``SPLASH_USER`` and ``SPLASH_PASS`` optional settings::
+
+      SPLASH_USER = 'root'
+      SPLASH_PASS = 'hunter2'
+
 .. note::
 
     Steps (3) and (4) are necessary because Scrapy doesn't provide a way

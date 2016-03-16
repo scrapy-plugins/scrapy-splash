@@ -16,10 +16,9 @@ from scrapyjs.middleware import SplashMiddleware
 from scrapyjs.request import SplashRequest
 
 
-def _get_mw():
-    crawler = get_crawler(settings_dict={
-        'DOWNLOAD_HANDLERS': {'s3': None},  # for faster test running
-    })
+def _get_mw(**settings):
+    settings.setdefault('DOWNLOAD_HANDLERS', {'s3': None}) # faster test running
+    crawler = get_crawler(settings_dict=settings)
     if not hasattr(crawler, 'logformatter'):
         crawler.logformatter = None
     crawler.engine = ExecutionEngine(crawler, lambda _: None)
@@ -157,3 +156,28 @@ def test_adjust_timeout():
     })
     req2 = mw.process_request(req2, None)
     assert req2.meta['download_timeout'] == 30
+
+
+def test_no_auth():
+    mw = _get_mw()
+    meta = {'splash': {}}
+    req = mw.process_request(SplashRequest("http://d.co"), None)
+    assert 'Authorization' not in req.headers
+
+    mw = _get_mw(SPLASH_USER='', SPLASH_PASS='')
+    req = mw.process_request(SplashRequest("http://d.co"), None)
+    assert 'Authorization' not in req.headers
+
+
+def test_auth():
+    mw = _get_mw(SPLASH_USER='root')
+    req = mw.process_request(SplashRequest("http://d.co"), None)
+    assert 'Authorization' in req.headers
+
+    mw = _get_mw(SPLASH_USER='root', SPLASH_PASS='hunter2')
+    req = mw.process_request(SplashRequest("http://d.co"), None)
+    assert 'Authorization' in req.headers
+
+    mw = _get_mw(SPLASH_USER=None, SPLASH_PASS='hunter2')
+    req = mw.process_request(SplashRequest("http://d.co"), None)
+    assert 'Authorization' in req.headers
