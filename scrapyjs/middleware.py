@@ -7,6 +7,7 @@ from six.moves.urllib.parse import urljoin
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 
+from w3lib.http import basic_auth_header
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,11 @@ class SplashMiddleware(object):
         self.crawler = crawler
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
+        self.splash_auth = None
+        user = crawler.settings.get('SPLASH_USER') or ''
+        passwd = crawler.settings.get('SPLASH_PASS') or ''
+        if user or passwd:
+            self.splash_auth = basic_auth_header(user, passwd)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -108,6 +114,9 @@ class SplashMiddleware(object):
             body=body,
             headers=new_headers,
         )
+
+        if self.splash_auth:
+            req_rep.headers['Authorization'] = self.splash_auth
 
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return req_rep
