@@ -206,6 +206,14 @@ Run a simple `Splash Lua Script`_::
 .. _Splash Lua Script: http://splash.readthedocs.org/en/latest/scripting-tutorial.html
 
 
+HTTP Basic Auth
+===============
+
+If you need HTTP Basic Authentication to access Splash, use
+Scrapy's HttpAuthMiddleware_.
+
+.. _HttpAuthMiddleware: http://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpauth
+
 Why not use the Splash HTTP API directly?
 =========================================
 

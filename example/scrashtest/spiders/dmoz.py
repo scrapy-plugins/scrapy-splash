@@ -10,6 +10,9 @@ class DmozSpider(scrapy.Spider):
     allowed_domains = ["dmoz.org"]
     start_urls = ['http://www.dmoz.org/']
 
+    # http_user = 'splash-user'
+    # http_pass = 'splash-password'
+
     def parse(self, response):
         le = LinkExtractor()
         for link in le.extract_links(response):
