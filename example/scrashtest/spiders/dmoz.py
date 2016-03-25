@@ -23,5 +23,5 @@ class DmozSpider(scrapy.Spider):
             })
 
     def parse_link(self, response):
-        res = json.loads(response.body)
+        res = json.loads(response.body_as_unicode())
         print(res["har"]["log"]["pages"])
