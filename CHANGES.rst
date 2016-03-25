@@ -1,12 +1,13 @@
 Changes
 =======
 
-0.2 (TBA)
----------
+0.2 (2016-03-26)
+----------------
 
 * Scrapy 1.0 and 1.1 support;
 * Python 3 support;
-* project is moved to https://github.com/scrapy-plugins/scrapy-splash
+* documentation improvements;
+* project is moved to https://github.com/scrapy-plugins/scrapy-splash.
 
 0.1.1 (2015-03-16)
 ------------------
