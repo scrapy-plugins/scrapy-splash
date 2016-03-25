@@ -6,7 +6,7 @@ setup(
     version='0.1.1',
     url='https://github.com/scrapy-plugins/scrapy-splash',
     description='JavaScript support for Scrapy using Splash',
-    long_description=open('README.rst').read(),
+    long_description=open('README.rst').read() + "\n\n" + open("CHANGES.rst").read(),
     author='Scrapy developer',
     maintainer='Mikhail Korobov',
     maintainer_email='kmike84@gmail.com',
