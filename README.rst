@@ -258,7 +258,7 @@ Contributing
 ============
 
 Source code and bug tracker are on github:
-https://github.com/scrapinghub/scrapyjs
+https://github.com/scrapy-plugins/scrapy-splash
 
 To run tests, install "tox" Python package and then run ``tox`` command
 from the source checkout.

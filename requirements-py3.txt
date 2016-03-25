@@ -1,3 +1,3 @@
-scrapy>=1.1.0rc1
+scrapy>=1.1.0rc3
 service_identity
 six

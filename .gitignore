@@ -3,3 +3,4 @@
 build
 dist
 scrapyjs.egg-info
+.cache
