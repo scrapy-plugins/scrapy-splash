@@ -79,6 +79,16 @@ def test_override_splash_url():
     assert json.loads(to_native_str(req.body)) == {'url': req1.url}
 
 
+def test_url_with_fragment():
+    mw = _get_mw()
+    url = "http://example.com#id1"
+    req = scrapy.Request("http://example.com", meta={
+        'splash': {'args': {'url': url}}
+    })
+    req = mw.process_request(req, None)
+    assert json.loads(to_native_str(req.body)) == {'url': url}
+
+
 def test_float_wait_arg():
     mw = _get_mw()
     req1 = scrapy.Request("http://example.com", meta={
@@ -89,7 +99,6 @@ def test_float_wait_arg():
     })
     req = mw.process_request(req1, None)
     assert json.loads(to_native_str(req.body)) == {'url': req1.url, 'wait': 0.5}
-
 
 
 def test_slot_policy_single_slot():

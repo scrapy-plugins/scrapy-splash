@@ -91,6 +91,10 @@ To render the requests with Splash, use the ``'splash'`` Request `meta` key::
 * ``meta['splash']['args']`` contains arguments sent to Splash.
   ScrapyJS adds request.url to these arguments automatically.
 
+  Note that by default Scrapy escapes URL fragments using AJAX escaping scheme.
+  If you want to pass a URL with a fragment to Splash then set ``url``
+  in ``args`` dict manually.
+
 * ``meta['splash']['endpoint']`` is the Splash endpoint to use. By default
   `render.json <http://splash.readthedocs.org/en/latest/api.html#render-json>`_
   is used.
