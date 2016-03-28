@@ -104,6 +104,14 @@ def test_url_with_fragment():
     assert json.loads(to_native_str(req.body)) == {'url': url}
 
 
+def test_splash_request_url_with_fragment():
+    mw = _get_mw()
+    url = "http://example.com#id1"
+    req = SplashRequest(url)
+    req = mw.process_request(req, None)
+    assert json.loads(to_native_str(req.body)) == {'url': url, 'wait': 0.5}
+
+
 def test_float_wait_arg():
     mw = _get_mw()
     req1 = scrapy.Request("http://example.com", meta={

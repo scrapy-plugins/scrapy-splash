@@ -21,6 +21,8 @@ class SplashRequest(scrapy.Request):
         meta = kwargs.pop('meta', {})
         if 'splash' not in meta:
             meta['splash'] = copy.deepcopy(self.default_splash_meta)
+        splash_args = meta['splash'].setdefault('args', {})
+        splash_args.setdefault('url', url)  # preserve URL fragment
         super(SplashRequest, self).__init__(url, *args, meta=meta, **kwargs)
 
     def replace(self, *args, **kwargs):
