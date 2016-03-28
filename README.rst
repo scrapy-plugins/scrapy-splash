@@ -31,11 +31,13 @@ Check Splash `install docs`_ for more info.
 Configuration
 =============
 
-1. Add the Splash server address to ``settings.py`` of your Scrapy project like this::
+1. Add the Splash server address to ``settings.py`` of your Scrapy project
+   like this::
 
       SPLASH_URL = 'http://192.168.59.103:8050'
 
-2. Enable the Splash middleware by adding it to ``DOWNLOADER_MIDDLEWARES`` in your ``settings.py`` file::
+2. Enable the Splash middleware by adding it to ``DOWNLOADER_MIDDLEWARES``
+   in your ``settings.py`` file::
 
       DOWNLOADER_MIDDLEWARES = {
           'scrapyjs.SplashMiddleware': 725,
@@ -50,8 +52,9 @@ Configuration
 
       DUPEFILTER_CLASS = 'scrapyjs.SplashAwareDupeFilter'
 
-4. If you use Scrapy HTTP cache then a custom cache storage backend is required.
-   ScrapyJS provides a subclass of ``scrapy.contrib.httpcache.FilesystemCacheStorage``::
+4. If you use Scrapy HTTP cache then a custom cache storage backend
+   is required. ScrapyJS provides a subclass of
+   ``scrapy.contrib.httpcache.FilesystemCacheStorage``::
 
       HTTPCACHE_STORAGE = 'scrapyjs.SplashAwareFSCacheStorage'
 
@@ -69,9 +72,27 @@ Configuration
 Usage
 =====
 
-To render the requests with Splash, use the ``'splash'`` Request `meta` key::
+The easiest way to render requests with Splash is to
+use ``scrapyjs.SplashRequest``::
 
-    yield Request(url, self.parse_result, meta={
+    yield SplashRequest(url, self.parse_result,
+        args={
+            # optional; parameters passed to Splash HTTP API
+            'wait': 0.5,
+
+            # 'url' is prefilled from request url
+            # 'http_method' is set to 'POST' for POST requests
+            # 'body' is set to request body for POST requests
+        },
+        endpoint='render.json', # optional; default is render.html
+        splash_url='<url>',     # optional; overrides SPLASH_URL
+        slot_policy=scrapyjs.SlotPolicy.PER_DOMAIN,  # optional
+    )
+
+Alternatively, you can use regular scrapy.Request and
+``'splash'`` Request `meta` key::
+
+    yield scrapy.Request(url, self.parse_result, meta={
         'splash': {
             'args': {
                 # set rendering arguments here
@@ -89,6 +110,14 @@ To render the requests with Splash, use the ``'splash'`` Request `meta` key::
             'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
         }
     })
+
+Use ``request.meta['splash']`` API in middlewares or when other scrapy.Request
+subclasses (e.g. scrapy.FormRequest) are used. For example, ``meta['splash']``
+allows to create a middleware which enables Splash for all outgoing requests
+by default.
+
+``SplashRequest`` is a convenient utility to fill ``request.meta['splash']``;
+it should be easier to use in most cases.
 
 * ``meta['splash']['args']`` contains arguments sent to Splash.
   ScrapyJS adds some default keys/values to ``args``:
@@ -108,9 +137,13 @@ To render the requests with Splash, use the ``'splash'`` Request `meta` key::
   endpoint and want to support POST requests you have to handle
   ``http_method`` and ``body`` arguments in your Lua script manually.
 
-* ``meta['splash']['endpoint']`` is the Splash endpoint to use. By default
+* ``meta['splash']['endpoint']`` is the Splash endpoint to use.
+   In case of SplashRequest
+  `render.html <http://splash.readthedocs.org/en/latest/api.html#render-html>`_
+  is used by default. If you're using raw scrapy.Request then
   `render.json <http://splash.readthedocs.org/en/latest/api.html#render-json>`_
-  is used.
+  is a default (for historical reasons). It is better to always pass endpoint
+  explicitly.
 
   See Splash `HTTP API docs`_ for a full list of available endpoints
   and parameters.
@@ -144,18 +177,14 @@ Examples
 Get HTML contents::
 
     import scrapy
+    from scrapyjs import SplashRequest
 
     class MySpider(scrapy.Spider):
         start_urls = ["http://example.com", "http://example.com/foo"]
 
         def start_requests(self):
             for url in self.start_urls:
-                yield scrapy.Request(url, self.parse, meta={
-                    'splash': {
-                        'endpoint': 'render.html',
-                        'args': {'wait': 0.5}
-                    }
-                })
+                yield SplashRequest(url, self.parse, args={'wait': 0.5})
 
         def parse(self, response):
             # response.body is a result of render.html call; it
@@ -167,20 +196,19 @@ Get HTML contents and a screenshot::
     import json
     import base64
     import scrapy
+    from scrapyjs import SplashRequest
 
     class MySpider(scrapy.Spider):
 
         # ...
-            yield scrapy.Request(url, self.parse_result, meta={
-                'splash': {
-                    'args': {
-                        'html': 1,
-                        'png': 1,
-                        'width': 600,
-                        'render_all': 1,
-                    }
-                }
-            })
+            splash_args = {
+                'html': 1,
+                'png': 1,
+                'width': 600,
+                'render_all': 1,
+            }
+            yield SplashRequest(url, self.parse_result, endpoint='render.json',
+                                args=splash_args)
 
         # ...
         def parse_result(self, response):
@@ -193,6 +221,8 @@ Run a simple `Splash Lua Script`_::
 
     import json
     import base64
+    from scrapyjs import SplashRequest
+
 
     class MySpider(scrapy.Spider):
 
@@ -203,16 +233,73 @@ Run a simple `Splash Lua Script`_::
                 return splash:evaljs("document.title")
             end
             """
-            yield scrapy.Request(url, self.parse_result, meta={
-                'splash': {
-                    'args': {'lua_source': script},
-                    'endpoint': 'execute',
-                }
-            })
+            yield SplashRequest(url, self.parse_result, endpoint='execute',
+                                args={'lua_source': script})
 
         # ...
-        def parse_response(self, response):
+        def parse_result(self, response):
             doc_title = response.body_as_unicode()
+            # ...
+
+
+More complex `Splash Lua Script`_ example - get a screenshot of an HTML
+element by its CSS selector (it requires Splash 2.1+).
+Note how are arguments passed to the script::
+
+    import json
+    import base64
+    from scrapyjs import SplashRequest
+
+    script = """
+    -- Arguments:
+    -- * url - URL to render;
+    -- * css - CSS selector to render;
+    -- * pad - screenshot padding size.
+
+    -- this function adds padding around region
+    function pad(r, pad)
+      return {r[1]-pad, r[2]-pad, r[3]+pad, r[4]+pad}
+    end
+
+    -- main script
+    function main(splash)
+
+      -- this function returns element bounding box
+      local get_bbox = splash:jsfunc([[
+        function(css) {
+          var el = document.querySelector(css);
+          var r = el.getBoundingClientRect();
+          return [r.left, r.top, r.right, r.bottom];
+        }
+      ]])
+
+      assert(splash:go(splash.args.url))
+      assert(splash:wait(0.5))
+
+      -- don't crop image by a viewport
+      splash:set_viewport_full()
+
+      local region = pad(get_bbox(splash.args.css), splash.args.pad)
+      return splash:png{region=region}
+    end
+    """
+
+    class MySpider(scrapy.Spider):
+
+
+        # ...
+            yield SplashRequest(url, self.parse_element_screenshot,
+                endpoint='execute',
+                args={
+                    'lua_source': script,
+                    'pad': 32,
+                    'css': 'a.title'
+                }
+             )
+
+        # ...
+        def parse_element_screenshot(self, response):
+            image_data = response.body  # binary image data in PNG format
             # ...
 
 
@@ -276,7 +363,6 @@ ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
 
 .. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
 .. _timeout: http://splash.readthedocs.org/en/latest/api.html#arg-timeout
-
 
 
 Contributing

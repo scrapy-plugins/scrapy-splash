@@ -12,7 +12,7 @@ except ImportError:
     from scrapy.utils.python import str_to_unicode as to_native_str
 
 import scrapyjs
-from scrapyjs.middleware import SplashMiddleware
+from scrapyjs.middleware import SplashMiddleware, SlotPolicy
 from scrapyjs.request import SplashRequest
 
 
@@ -45,10 +45,43 @@ def test_splash_request():
     assert req2.url == "http://127.0.0.1:8050/render.html"
     assert req2.headers == {b'Content-Type': [b'application/json']}
     assert req2.method == 'POST'
+    assert isinstance(req2, SplashRequest)
 
     expected_body = {'url': req.url}
-    expected_body.update(SplashRequest.default_splash_meta['args'])
     assert json.loads(to_native_str(req2.body)) == expected_body
+
+
+def test_splash_requst_parameters():
+    mw = _get_mw()
+
+    def cb():
+        pass
+
+    req = SplashRequest("http://example.com/#!start", cb, 'POST',
+        body="foo=bar",
+        splash_url="http://mysplash.example.com",
+        slot_policy=SlotPolicy.SINGLE_SLOT,
+        endpoint="execute",
+        args={
+            "lua_source": "function main() end",
+            "myarg": 3.0,
+        }
+    )
+    req = mw.process_request(req, None)
+    assert req.meta['splash'] == {
+        'endpoint': 'execute',
+        'splash_url': "http://mysplash.example.com",
+        'slot_policy': SlotPolicy.SINGLE_SLOT,
+        'args': {
+            'url': "http://example.com/#!start",
+            'http_method': 'POST',
+            'body': 'foo=bar',
+            'lua_source': 'function main() end',
+            'myarg': 3.0,
+        }
+    }
+    assert req.callback == cb
+    assert req.method == 'GET'
 
 
 def test_splash_request_no_url():
@@ -109,7 +142,7 @@ def test_splash_request_url_with_fragment():
     url = "http://example.com#id1"
     req = SplashRequest(url)
     req = mw.process_request(req, None)
-    assert json.loads(to_native_str(req.body)) == {'url': url, 'wait': 0.5}
+    assert json.loads(to_native_str(req.body)) == {'url': url}
 
 
 def test_float_wait_arg():

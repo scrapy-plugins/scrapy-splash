@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import copy
 import scrapy
+
+from scrapyjs import SlotPolicy
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
@@ -9,21 +10,39 @@ import scrapy
 
 
 class SplashRequest(scrapy.Request):
-    default_splash_meta = {
-        'args': {'wait': 0.5},
-        'endpoint': 'render.html',
-    }
+    """
+    scrapy.Request subclass which instructs Scrapy to render
+    the page using Splash.
 
-    def __init__(self, url=None, *args, **kwargs):
+    It requires SplashMiddleware to work.
+    """
+    def __init__(self,
+                 url=None,
+                 callback=None,
+                 method='GET',
+                 endpoint='render.html',
+                 args=None,
+                 splash_url=None,
+                 slot_policy=SlotPolicy.PER_DOMAIN,
+                 **kwargs):
         if url is None:
             url = 'about:blank'
         self._original_url = url
+
         meta = kwargs.pop('meta', {})
-        if 'splash' not in meta:
-            meta['splash'] = copy.deepcopy(self.default_splash_meta)
-        splash_args = meta['splash'].setdefault('args', {})
-        splash_args.setdefault('url', url)  # preserve URL fragment
-        super(SplashRequest, self).__init__(url, *args, meta=meta, **kwargs)
+        splash_meta = meta.setdefault('splash', {})
+        splash_meta.setdefault('endpoint', endpoint)
+        splash_meta.setdefault('slot_policy', slot_policy)
+        if splash_url is not None:
+            splash_meta['splash_url'] = splash_url
+
+        _args = {'url': url}  # put URL to args in order to preserve #fragment
+        _args.update(args or {})
+        _args.update(splash_meta.get('args', {}))
+        splash_meta['args'] = _args
+
+        super(SplashRequest, self).__init__(url, callback, method, meta=meta,
+                                            **kwargs)
 
     def replace(self, *args, **kwargs):
         obj = super(SplashRequest, self).replace(*args, **kwargs)
