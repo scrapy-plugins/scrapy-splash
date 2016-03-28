@@ -81,7 +81,6 @@ def test_splash_requst_parameters():
         }
     }
     assert req.callback == cb
-    assert req.method == 'GET'
 
 
 def test_splash_request_no_url():
