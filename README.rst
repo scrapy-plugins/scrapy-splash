@@ -79,6 +79,8 @@ To render the requests with Splash, use the ``'splash'`` Request `meta` key::
                 'png': 1,
 
                 # 'url' is prefilled from request url
+                # 'http_method' is set to 'POST' for POST requests
+                # 'body' is set to request body for POST requests
             },
 
             # optional parameters
@@ -89,11 +91,22 @@ To render the requests with Splash, use the ``'splash'`` Request `meta` key::
     })
 
 * ``meta['splash']['args']`` contains arguments sent to Splash.
-  ScrapyJS adds request.url to these arguments automatically.
+  ScrapyJS adds some default keys/values to ``args``:
+
+  * 'url' is set to request.url;
+  * 'http_method' is set to 'POST' for POST requests;
+  * 'body' is set to to request.body for POST requests.
+
+  You can override default values by setting them explicitly.
 
   Note that by default Scrapy escapes URL fragments using AJAX escaping scheme.
   If you want to pass a URL with a fragment to Splash then set ``url``
   in ``args`` dict manually.
+
+  Splash 1.8+ is required to handle POST requests; in earlier Splash versions
+  'http_method' and 'body' arguments are ignored. If you work with ``/execute``
+  endpoint and want to support POST requests you have to handle
+  ``http_method`` and ``body`` arguments in your Lua script manually.
 
 * ``meta['splash']['endpoint']`` is the Splash endpoint to use. By default
   `render.json <http://splash.readthedocs.org/en/latest/api.html#render-json>`_

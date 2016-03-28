@@ -55,10 +55,10 @@ class SplashMiddleware(object):
             # don't process the same request more than once
             return
 
-        if request.method != 'GET':
+        if request.method not in {'GET', 'POST'}:
             logger.warn(
-                "Currently only GET requests are supported by SplashMiddleware;"
-                " %(request)s will be handled without Splash",
+                "Currently only GET and POST requests are supported by "
+                "SplashMiddleware; %(request)s will be handled without Splash",
                 {'request': request},
                 extra={'spider': spider}
             )
@@ -72,6 +72,10 @@ class SplashMiddleware(object):
 
         args = splash_options.setdefault('args', {})
         args.setdefault('url', request.url)
+        if request.method == 'POST':
+            args.setdefault('http_method', request.method)
+            # XXX: non-UTF8 bodies are not supported now
+            args.setdefault('body', request.body.decode('utf8'))
         body = json.dumps(args, ensure_ascii=False)
 
         if 'timeout' in args:

@@ -66,6 +66,21 @@ def test_splash_request_no_url():
     }
 
 
+def test_post_request():
+    mw = _get_mw()
+    for body in [b'', b'foo=bar']:
+        req1 = scrapy.Request("http://example.com",
+                              method="POST",
+                              body=body,
+                              meta={'splash': {'endpoint': 'render.html'}})
+        req = mw.process_request(req1, None)
+        assert json.loads(to_native_str(req.body)) == {
+            'url': 'http://example.com',
+            'http_method': 'POST',
+            'body': to_native_str(body),
+        }
+
+
 def test_override_splash_url():
     mw = _get_mw()
     req1 = scrapy.Request("http://example.com", meta={
