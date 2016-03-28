@@ -106,8 +106,9 @@ Alternatively, you can use regular scrapy.Request and
 
             # optional parameters
             'endpoint': 'render.json',  # optional; default is render.json
-            'splash_url': '<url>',      # overrides SPLASH_URL
+            'splash_url': '<url>',      # optional; overrides SPLASH_URL
             'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
+            'splash_headers': {},       # optional; a dict with headers sent to Splash
         }
     })
 
@@ -152,6 +153,10 @@ it should be easier to use in most cases.
 
 * ``meta['splash']['splash_url']`` overrides the Splash URL set
   in ``settings.py``.
+
+* ``meta['splash']['splash_headers']`` allows to add or change headers
+  which are sent to Splash server. Note that this option **is not** for
+  setting headers which are sent to the remote website.
 
 * ``meta['splash']['slot_policy']`` customize how
   concurrency & politeness are maintained for Splash requests.
@@ -311,6 +316,10 @@ HTTP Basic Auth
 
 If you need HTTP Basic Authentication to access Splash, use
 Scrapy's HttpAuthMiddleware_.
+
+Another option is ``meta['splash']['splash_headers']``: it allows to set
+custom headers which are sent to Splash server; add Authorization header
+to ``splash_headers`` if HttpAuthMiddleware doesn't fit for some reason.
 
 .. _HttpAuthMiddleware: http://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpauth
 

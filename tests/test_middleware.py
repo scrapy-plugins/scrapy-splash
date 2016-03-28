@@ -62,6 +62,7 @@ def test_splash_requst_parameters():
         splash_url="http://mysplash.example.com",
         slot_policy=SlotPolicy.SINGLE_SLOT,
         endpoint="execute",
+        splash_headers={'X-My-Header': 'value'},
         args={
             "lua_source": "function main() end",
             "myarg": 3.0,
@@ -72,6 +73,7 @@ def test_splash_requst_parameters():
         'endpoint': 'execute',
         'splash_url': "http://mysplash.example.com",
         'slot_policy': SlotPolicy.SINGLE_SLOT,
+        'splash_headers': {'X-My-Header': 'value'},
         'args': {
             'url': "http://example.com/#!start",
             'http_method': 'POST',
@@ -81,6 +83,10 @@ def test_splash_requst_parameters():
         }
     }
     assert req.callback == cb
+    assert req.headers == {
+        b'Content-Type': [b'application/json'],
+        b'X-My-Header': [b'value'],
+    }
 
 
 def test_splash_request_no_url():
