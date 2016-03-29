@@ -376,7 +376,7 @@ sure to read the observations after it::
 
         def start_requests(self):
             for url in self.start_urls:
-                body = json.dumps({"url": url, "wait": 0.5})
+                body = json.dumps({"url": url, "wait": 0.5}, sort_keys=True)
                 headers = Headers({'Content-Type': 'application/json'})
                 yield scrapy.Request(RENDER_HTML_URL, self.parse, method="POST",
                                      body=body, headers=headers)
@@ -405,6 +405,12 @@ aware of:
 4. Some options depend on each other - for example, if you use timeout_
    Splash option then you may want to set ``download_timeout``
    scrapy.Request meta key as well.
+
+5. It is easy to get it subtely wrong - e.g. if you won't use
+   ``sort_keys=True`` argument when preparing JSON body then binary POST body
+   content could vary even if all keys and values are the same, and it means
+   dupefilter and cache will work incorrectly.
+
 
 ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
 

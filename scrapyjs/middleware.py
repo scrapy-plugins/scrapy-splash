@@ -78,7 +78,7 @@ class SplashMiddleware(object):
             args.setdefault('http_method', request.method)
             # XXX: non-UTF8 bodies are not supported now
             args.setdefault('body', request.body.decode('utf8'))
-        body = json.dumps(args, ensure_ascii=False)
+        body = json.dumps(args, ensure_ascii=False, sort_keys=True)
 
         if 'timeout' in args:
             # User requested a Splash timeout explicitly.
