@@ -95,9 +95,11 @@ class SplashMiddleware(object):
             # it when it's too small. Decreasing `download_timeout` is not
             # safe.
 
+            timeout_requested = float(args['timeout'])
+            timeout_expected = timeout_requested + self.splash_extra_timeout
+
             # no timeout means infinite timeout
             timeout_current = meta.get('download_timeout', 1e6)
-            timeout_expected = float(args['timeout']) + self.splash_extra_timeout
 
             if timeout_expected > timeout_current:
                 meta['download_timeout'] = timeout_expected
