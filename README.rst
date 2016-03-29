@@ -2,8 +2,17 @@
 ScrapyJS - Scrapy & JavaScript integration through Splash
 =========================================================
 
+.. image:: https://img.shields.io/pypi/v/scrapyjs.svg
+   :target: https://pypi.python.org/pypi/scrapyjs
+   :alt: PyPI Version
+
 .. image:: https://travis-ci.org/scrapy-plugins/scrapy-splash.svg?branch=master
    :target: http://travis-ci.org/scrapy-plugins/scrapy-splash
+   :alt: Build Status
+
+.. image:: http://codecov.io/github/scrapy-plugins/scrapy-splash/coverage.svg?branch=master
+   :target: http://codecov.io/github/scrapy-plugins/scrapy-splash?branch=master
+   :alt: Code Coverage
 
 This library provides Scrapy_ and JavaScript integration using Splash_.
 The license is BSD 3-clause.
