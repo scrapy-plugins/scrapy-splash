@@ -7,6 +7,8 @@ from six.moves.urllib.parse import urljoin
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 
+from scrapyjs.responsetypes import responsetypes
+
 
 logger = logging.getLogger(__name__)
 
@@ -121,13 +123,18 @@ class SplashMiddleware(object):
 
     def process_response(self, request, response, spider):
         splash_options = request.meta.get("_splash_processed")
-        if splash_options:
-            endpoint = splash_options['endpoint']
-            self.crawler.stats.inc_value(
-                'splash/%s/response_count/%s' % (endpoint, response.status)
-            )
+        if not splash_options:
+            return response
 
-        return response
+        # update stats
+        endpoint = splash_options['endpoint']
+        self.crawler.stats.inc_value(
+            'splash/%s/response_count/%s' % (endpoint, response.status)
+        )
+
+        # create a custom Response subclass based on response Content-Type
+        respcls = responsetypes.from_args(headers=response.headers)
+        return response.replace(cls=respcls)
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:
@@ -147,3 +154,4 @@ class SplashMiddleware(object):
         return self.crawler.engine.downloader._get_slot_key(
             request_or_response, None
         )
+

@@ -18,6 +18,9 @@ from .dupefilter import splash_request_fingerprint
 
 
 class SplashAwareFSCacheStorage(FilesystemCacheStorage):
+    # FIXME: storage should restore Splash response classes
+    # instead of regular Scrapy response classes.
+
     def _get_request_path(self, spider, request):
         key = splash_request_fingerprint(request)
         return os.path.join(self.cachedir, spider.name, key[0:2], key)

@@ -81,6 +81,9 @@ Configuration
 Usage
 =====
 
+Requests
+--------
+
 The easiest way to render requests with Splash is to
 use ``scrapyjs.SplashRequest``::
 
@@ -184,6 +187,28 @@ it should be easier to use in most cases.
      It is similar to ``SINGLE_SLOT`` policy, but can be different if you access
      other services on the same address as Splash.
 
+Responses
+---------
+
+ScrapyJS provides returns Response subclasses for Splash requests:
+
+* SplashResponse is returned for binary Splash responses - e.g. for
+  /render.png responses;
+* SplashTextResponse is returned when the result is text - e.g. for
+  /render.html responses;
+* SplashJsonResponse is returned when the result is a JSON object - e.g.
+  for /render.json responses or /execute responses when script returns
+  a Lua table.
+
+All these responses set ``response.url`` to the URL of the original request
+(i.e. to the URL of a website you want to render), not to the URL of the
+requested Splash endpoint. "True" URL is still available as
+``response.real_url``.
+
+SplashJsonResponse provide extra features:
+
+* ``response.data`` attribute contains response data decoded from JSON;
+  you can access it like ``response.data['html']``.
 
 Examples
 ========
@@ -373,7 +398,11 @@ aware of:
    in unexpected ways since delays and concurrency settings are no longer
    per-domain.
 
-3. Some options depend on each other - for example, if you use timeout_
+3. As seen by Scrapy, response.url is an URL of the Splash server.
+   scrapy-splash fixes it to be an URL of a requested page.
+   "Real" URL is still available as ``response.real_url``.
+
+4. Some options depend on each other - for example, if you use timeout_
    Splash option then you may want to set ``download_timeout``
    scrapy.Request meta key as well.
 

@@ -6,6 +6,7 @@ import json
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
+from scrapy.http import Response, TextResponse
 try:
     from scrapy.utils.python import to_native_str
 except ImportError:
@@ -34,11 +35,18 @@ def test_nosplash():
     assert mw.process_request(req, None) is None
     assert old_meta == req.meta
 
+    # response is not changed
+    response = Response("http://example.com", request=req)
+    response2 = mw.process_response(req, response, None)
+    assert response2 is response
+    assert response2.url == "http://example.com"
+
 
 def test_splash_request():
     mw = _get_mw()
     req = SplashRequest("http://example.com?foo=bar&url=1&wait=100")
 
+    # check request preprocessing
     req2 = mw.process_request(req, None)
     assert req2 is not None
     assert req2 is not req
@@ -49,6 +57,26 @@ def test_splash_request():
 
     expected_body = {'url': req.url}
     assert json.loads(to_native_str(req2.body)) == expected_body
+
+    # check response post-processing
+    response = TextResponse("http://127.0.0.1:8050/render.html",
+                            request=req2,
+                            headers={b'Content-Type': b'text/html'},
+                            body=b"<html><body>Hello</body></html>")
+    response2 = mw.process_response(req2, response, None)
+    assert isinstance(response2, scrapyjs.SplashTextResponse)
+    assert response2 is not response
+    assert response2.real_url == req2.url
+    assert response2.url == req.url
+    assert response2.body == b"<html><body>Hello</body></html>"
+    assert response2.css("body").extract_first() == "<body>Hello</body>"
+
+    # check .replace method
+    response3 = response2.replace(status=404)
+    assert response3.status == 404
+    assert isinstance(response3, scrapyjs.SplashTextResponse)
+    for attr in ['url', 'real_url', 'headers', 'body']:
+        assert getattr(response3, attr) == getattr(response2, attr)
 
 
 def test_splash_requst_parameters():
@@ -68,8 +96,8 @@ def test_splash_requst_parameters():
             "myarg": 3.0,
         }
     )
-    req = mw.process_request(req, None)
-    assert req.meta['splash'] == {
+    req2 = mw.process_request(req, None)
+    assert req2.meta['splash'] == {
         'endpoint': 'execute',
         'splash_url': "http://mysplash.example.com",
         'slot_policy': SlotPolicy.SINGLE_SLOT,
@@ -82,11 +110,31 @@ def test_splash_requst_parameters():
             'myarg': 3.0,
         }
     }
-    assert req.callback == cb
-    assert req.headers == {
+    assert req2.callback == cb
+    assert req2.headers == {
         b'Content-Type': [b'application/json'],
         b'X-My-Header': [b'value'],
     }
+
+    # check response post-processing
+    res = {
+        'html': '<html><body>Hello</body></html>',
+        'num_divs': 0.0,
+    }
+    res_body = json.dumps(res)
+    response = TextResponse("http://mysplash.example.com/execute",
+                            request=req2,
+                            headers={b'Content-Type': b'application/json'},
+                            body=res_body.encode('utf8'))
+    response2 = mw.process_response(req2, response, None)
+    assert isinstance(response2, scrapyjs.SplashJsonResponse)
+    assert response2 is not response
+    assert response2.real_url == req2.url
+    assert response2.url == req.meta['splash']['args']['url']
+    assert response2.data == res
+    assert response2.body == res_body.encode('utf8')
+    assert response2.text == response2.body_as_unicode() == res_body
+    assert response2.encoding == 'utf8'
 
 
 def test_splash_request_no_url():
