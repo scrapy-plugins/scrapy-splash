@@ -26,9 +26,9 @@ class SplashRequest(scrapy.Request):
                  slot_policy=SlotPolicy.PER_DOMAIN,
                  splash_headers=None,
                  **kwargs):
+
         if url is None:
             url = 'about:blank'
-        self._original_url = url
 
         meta = kwargs.pop('meta', {})
         splash_meta = meta.setdefault('splash', {})
@@ -47,12 +47,15 @@ class SplashRequest(scrapy.Request):
         super(SplashRequest, self).__init__(url, callback, method, meta=meta,
                                             **kwargs)
 
-    def replace(self, *args, **kwargs):
-        obj = super(SplashRequest, self).replace(*args, **kwargs)
-        obj._original_url = self._original_url
-        return obj
+    @property
+    def _original_url(self):
+        return self.meta.get('splash', {}).get('args', {}).get('url')
+
+    @property
+    def _original_method(self):
+        return self.meta.get('splash', {}).get('args', {}).get('http_method', 'GET')
 
     def __str__(self):
-        return "<%s %s %s>" % (self.method, self.url, self._original_url)
+        return "<%s %s via %s>" % (self._original_method, self._original_url, self.url)
 
     __repr__ = __str__
