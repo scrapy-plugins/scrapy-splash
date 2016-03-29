@@ -143,7 +143,9 @@ it should be easier to use in most cases.
 
   Note that by default Scrapy escapes URL fragments using AJAX escaping scheme.
   If you want to pass a URL with a fragment to Splash then set ``url``
-  in ``args`` dict manually.
+  in ``args`` dict manually. This is handled automatically if you use
+  ``SplashRequest``, but you need to keep that in mind if you use raw
+  ``meta['splash']`` API.
 
   Splash 1.8+ is required to handle POST requests; in earlier Splash versions
   'http_method' and 'body' arguments are ignored. If you work with ``/execute``
