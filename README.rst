@@ -406,7 +406,7 @@ aware of:
    Splash option then you may want to set ``download_timeout``
    scrapy.Request meta key as well.
 
-5. It is easy to get it subtely wrong - e.g. if you won't use
+5. It is easy to get it subtly wrong - e.g. if you won't use
    ``sort_keys=True`` argument when preparing JSON body then binary POST body
    content could vary even if all keys and values are the same, and it means
    dupefilter and cache will work incorrectly.
