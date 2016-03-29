@@ -60,7 +60,8 @@ def test_splash_request():
 
     # check response post-processing
     response = TextResponse("http://127.0.0.1:8050/render.html",
-                            request=req2,
+                            # Scrapy doesn't pass request to constructor
+                            # request=req2,
                             headers={b'Content-Type': b'text/html'},
                             body=b"<html><body>Hello</body></html>")
     response2 = mw.process_response(req2, response, None)
@@ -123,7 +124,8 @@ def test_splash_requst_parameters():
     }
     res_body = json.dumps(res)
     response = TextResponse("http://mysplash.example.com/execute",
-                            request=req2,
+                            # Scrapy doesn't pass request to constructor
+                            # request=req2,
                             headers={b'Content-Type': b'application/json'},
                             body=res_body.encode('utf8'))
     response2 = mw.process_response(req2, response, None)
