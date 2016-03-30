@@ -55,7 +55,8 @@ Configuration
 .. note::
 
    Order `725` is just before `HttpProxyMiddleware` (750) in default
-   scrapy settings.
+   scrapy settings. `725` is also after ``CookiesMiddleware`` (700);
+   this allows Scrapy to handle cookies.
 
 3. Set a custom ``DUPEFILTER_CLASS``::
 

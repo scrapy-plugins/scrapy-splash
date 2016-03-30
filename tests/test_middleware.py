@@ -176,7 +176,12 @@ def test_magic_response():
         'headers': [
             {'name': 'Content-Type', 'value': "text/html"},
             {'name': 'X-My-Header', 'value': "foo"},
-        ]
+            {'name': 'Set-Cookie', 'value': "bar=baz"},
+        ],
+        'cookies': [
+            {'name': 'foo', 'value': 'bar'},
+            {'name': 'session', 'value': '12345', 'path': '/'},
+        ],
     }
     resp = TextResponse("http://mysplash.example.com/execute",
                         headers={b'Content-Type': b'application/json'},
@@ -188,6 +193,7 @@ def test_magic_response():
     assert resp2.headers == {
         b'Content-Type': [b'text/html'],
         b'X-My-Header': [b'foo'],
+        b'Set-Cookie': [b'bar=baz', b'foo=bar', b'session=12345; Path=/'],
     }
     assert resp2.status == 404
     assert resp2.url == "http://exmaple.com/#id42"

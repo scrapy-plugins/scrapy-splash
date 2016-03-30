@@ -7,7 +7,7 @@ import base64
 from scrapy.http import Response, TextResponse
 from scrapy import Selector
 
-from scrapyjs.utils import headers_to_scrapy
+from scrapyjs.utils import headers_to_scrapy, cookies_to_header_values, to_bytes
 
 
 class _SplashResponseMixin(object):
@@ -115,7 +115,10 @@ class SplashJsonResponse(SplashResponse):
             if 'headers' in self.data:
                 self.headers = headers_to_scrapy(self.data['headers'])
             if 'cookies' in self.data:
-                raise NotImplementedError("TODO: add Set-Cookie header")
+                cookie_values = cookies_to_header_values(self.data['cookies'])
+                set_cookie_values = self.headers.getlist('Set-Cookie')
+                set_cookie_values.extend(to_bytes(c) for c in cookie_values)
+                self.headers.setlist('Set-Cookie', set_cookie_values)
 
     @property
     def data(self):
