@@ -78,6 +78,7 @@ def test_splash_request():
     assert response2.url == req.url
     assert response2.body == b"<html><body>Hello</body></html>"
     assert response2.css("body").extract_first() == "<body>Hello</body>"
+    assert response2.headers == {b'Content-Type': [b'text/html']}
 
     # check .replace method
     response3 = response2.replace(status=404)
@@ -272,6 +273,7 @@ def test_magic_response_caching(tmpdir):
     assert resp3_1.text == "<html><body>Hello</body></html>"
     assert resp3_1.css("body").extract_first() == "<body>Hello</body>"
     assert resp3_1.data['render_time'] == 0.5
+    assert resp3_1.headers[b'Content-Type'] == b'text/html; charset=utf-8'
 
 
 def test_splash_request_no_url():

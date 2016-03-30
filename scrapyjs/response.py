@@ -109,6 +109,7 @@ class SplashJsonResponse(SplashResponse):
             elif 'html' in self.data:
                 self._cached_ubody = self.data['html']
                 self._body = self._cached_ubody.encode(self.encoding)
+                self.headers[b"Content-Type"] = b"text/html; charset=utf-8"
 
             # response.headers
             if 'headers' in self.data:
