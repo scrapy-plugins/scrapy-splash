@@ -137,12 +137,14 @@ class SplashMiddleware(object):
         if splash_options.get('dont_process_response', False):
             return response
 
-        # create a custom Response subclass based on response Content-Type
-        # XXX: usually request is assigned to response only when all
-        # downloader middlewares are executed. Here it is set earlier.
-        # Does it have any negative consequences?
-        respcls = responsetypes.from_args(headers=response.headers)
-        return response.replace(cls=respcls, request=request)
+        from scrapyjs import SplashResponse, SplashTextResponse
+        if not isinstance(response, (SplashResponse, SplashTextResponse)):
+            # create a custom Response subclass based on response Content-Type
+            # XXX: usually request is assigned to response only when all
+            # downloader middlewares are executed. Here it is set earlier.
+            # Does it have any negative consequences?
+            respcls = responsetypes.from_args(headers=response.headers)
+            return response.replace(cls=respcls, request=request)
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:
