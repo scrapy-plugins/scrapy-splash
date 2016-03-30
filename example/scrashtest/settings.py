@@ -7,6 +7,7 @@ NEWSPIDER_MODULE = 'scrashtest.spiders'
 
 DOWNLOADER_MIDDLEWARES = {
     'scrapyjs.SplashMiddleware': 725,
+    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
 }
 
 DUPEFILTER_CLASS = 'scrapyjs.SplashAwareDupeFilter'

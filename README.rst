@@ -46,10 +46,12 @@ Configuration
       SPLASH_URL = 'http://192.168.59.103:8050'
 
 2. Enable the Splash middleware by adding it to ``DOWNLOADER_MIDDLEWARES``
-   in your ``settings.py`` file::
+   in your ``settings.py`` file and changing HttpCompressionMiddleware
+   priority::
 
       DOWNLOADER_MIDDLEWARES = {
           'scrapyjs.SplashMiddleware': 725,
+          'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
       }
 
 .. note::
@@ -57,6 +59,10 @@ Configuration
    Order `725` is just before `HttpProxyMiddleware` (750) in default
    scrapy settings. `725` is also after ``CookiesMiddleware`` (700);
    this allows Scrapy to handle cookies.
+
+   HttpCompressionMiddleware priority should be changed inorder to allow
+   advanced response processing; see https://github.com/scrapy/scrapy/issues/1895
+   for details.
 
 3. Set a custom ``DUPEFILTER_CLASS``::
 
