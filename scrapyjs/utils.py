@@ -7,9 +7,19 @@ from six.moves.http_cookies import SimpleCookie, Morsel
 from scrapy.http import Headers
 
 try:
-    from scrapy.utils.python import to_bytes
+    from scrapy.utils.python import to_bytes, to_unicode, to_native_str
 except ImportError:
+    # scrapy < 1.1
     from scrapy.utils.python import unicode_to_str as to_bytes
+    from scrapy.utils.python import str_to_unicode as to_unicode
+
+    def to_native_str(text, encoding=None, errors='strict'):
+        """ Return str representation of `text`
+        (bytes in Python 2.x and unicode in Python 3.x). """
+        if six.PY2:
+            return to_bytes(text, encoding, errors)
+        else:
+            return to_unicode(text, encoding, errors)
 
 
 def dict_hash(obj, start=''):
@@ -131,7 +141,7 @@ def har_cookie_to_morsel(cookie):
     }
 
     c = SimpleCookie()
-    c[cookie['name']] = cookie.get('value', '')
+    c[to_native_str(cookie['name'])] = to_native_str(cookie.get('value', ''))
     for key, morsel in c.items():
         break
     for har_key, py_key in kv_map.items():
@@ -140,6 +150,10 @@ def har_cookie_to_morsel(cookie):
             # Python 2.x workaround: in Python 2.x False value for
             # httponly still makes the attribute set.
             if value or (py_key not in {'secure', 'httponly'}):
+                if isinstance(value, six.string_types):
+                    # another Python 2.x workaround: cookie methods
+                    # don't accept unicode
+                    value = to_native_str(value)
                 morsel[py_key] = value
     return morsel
 
