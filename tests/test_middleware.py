@@ -8,6 +8,7 @@ import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
 from scrapy.http import Response, TextResponse
+from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 try:
     from scrapy.utils.python import to_native_str
 except ImportError:
@@ -18,14 +19,19 @@ from scrapyjs.middleware import SplashMiddleware, SlotPolicy
 from scrapyjs.request import SplashRequest
 
 
-def _get_mw():
-    crawler = get_crawler(settings_dict={
-        'DOWNLOAD_HANDLERS': {'s3': None},  # for faster test running
-    })
+def _get_crawler(settings_dict):
+    settings_dict = settings_dict.copy()
+    settings_dict['DOWNLOAD_HANDLERS'] = {'s3': None}  # for faster test running
+    crawler = get_crawler(settings_dict=settings_dict)
     if not hasattr(crawler, 'logformatter'):
         crawler.logformatter = None
     crawler.engine = ExecutionEngine(crawler, lambda _: None)
     # spider = crawler._create_spider("foo")
+    return crawler
+
+
+def _get_mw():
+    crawler = _get_crawler({})
     return SplashMiddleware.from_crawler(crawler)
 
 
@@ -205,6 +211,67 @@ def test_magic_response2():
     assert resp2.headers == {b'Content-Type': [b'text/plain']}
     assert resp2.status == 200
     assert resp2.url == "http://example.com/"
+
+
+def test_magic_response_caching(tmpdir):
+    # prepare middlewares
+    spider = scrapy.Spider(name='foo')
+    crawler = _get_crawler({
+        'HTTPCACHE_DIR': str(tmpdir.join('cache')),
+        'HTTPCACHE_STORAGE': 'scrapyjs.SplashAwareFSCacheStorage',
+        'HTTPCACHE_ENABLED': True
+    })
+    cache_mw = HttpCacheMiddleware.from_crawler(crawler)
+    mw = _get_mw()
+
+    def _get_req():
+        return SplashRequest(
+            url="http://example.com",
+            endpoint='execute',
+            magic_response=True,
+            args={'lua_source': 'function main(splash) end'},
+        )
+
+    # Emulate Scrapy middleware chain.
+
+    # first call
+    req = _get_req()
+    req = mw.process_request(req, spider)
+    req = cache_mw.process_request(req, spider) or req
+    assert isinstance(req, scrapy.Request)  # first call; the cache is empty
+
+    resp_data = {
+        'html': "<html><body>Hello</body></html>",
+        'render_time': 0.5,
+    }
+    resp_body = json.dumps(resp_data).encode('utf8')
+    resp = TextResponse("http://example.com",
+                        headers={b'Content-Type': b'application/json'},
+                        body=resp_body)
+
+    resp2 = cache_mw.process_response(req, resp, spider)
+    resp3 = mw.process_response(req, resp2, spider)
+
+    assert resp3.text == "<html><body>Hello</body></html>"
+    assert resp3.css("body").extract_first() == "<body>Hello</body>"
+    assert resp3.data['render_time'] == 0.5
+
+    # second call
+    req = _get_req()
+    req = mw.process_request(req, spider)
+    cached_resp = cache_mw.process_request(req, spider) or req
+
+    # response should be from cache:
+    assert cached_resp.__class__ is TextResponse
+    assert cached_resp.body == resp_body
+    resp2_1 = cache_mw.process_response(req, cached_resp, spider)
+    resp3_1 = mw.process_response(req, resp2_1, spider)
+
+    assert isinstance(resp3_1, scrapyjs.SplashJsonResponse)
+    assert resp3_1.body == b"<html><body>Hello</body></html>"
+    assert resp3_1.text == "<html><body>Hello</body></html>"
+    assert resp3_1.css("body").extract_first() == "<body>Hello</body>"
+    assert resp3_1.data['render_time'] == 0.5
 
 
 def test_splash_request_no_url():
