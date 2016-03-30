@@ -4,10 +4,10 @@ from __future__ import absolute_import
 import json
 import base64
 
-from scrapy.http.headers import Headers
-
 from scrapy.http import Response, TextResponse
 from scrapy import Selector
+
+from scrapyjs.utils import headers_to_scrapy
 
 
 class _SplashResponseMixin(object):
@@ -113,30 +113,9 @@ class SplashJsonResponse(SplashResponse):
 
             # response.headers
             if 'headers' in self.data:
-                self.headers = self._build_headers(self.data['headers'])
+                self.headers = headers_to_scrapy(self.data['headers'])
             if 'cookies' in self.data:
                 raise NotImplementedError("TODO: add Set-Cookie header")
-
-    @classmethod
-    def _build_headers(cls, headers):
-        """
-        Return Headers instance from headers data.
-        3 data formats are supported:
-
-        * {name: value, ...} dict;
-        * [(name, value), ...] list;
-        * [{'name': name, 'value': value'}, ...] list (HAR headers format).
-        """
-        if isinstance(headers or {}, dict):
-            return Headers(headers or {})
-
-        if isinstance(headers[0], dict):
-            return Headers([
-                (d['name'], d.get('value', ''))
-                for d in headers
-            ])
-
-        return Headers(headers)
 
     @property
     def data(self):

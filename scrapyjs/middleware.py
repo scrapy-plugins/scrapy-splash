@@ -164,4 +164,3 @@ class SplashMiddleware(object):
         return self.crawler.engine.downloader._get_slot_key(
             request_or_response, None
         )
-

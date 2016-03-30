@@ -3,6 +3,8 @@ from __future__ import absolute_import
 import hashlib
 import six
 
+from scrapy.http import Headers
+
 try:
     from scrapy.utils.python import to_bytes
 except ImportError:
@@ -32,5 +34,26 @@ def dict_hash(obj, start=''):
             raise ValueError("Unsupported value type: %s" % obj.__class__)
         h.update(to_bytes(value))
     return h.hexdigest()
+
+
+def headers_to_scrapy(headers):
+    """
+    Return scrapy.http.Headers instance from headers data.
+    3 data formats are supported:
+
+    * {name: value, ...} dict;
+    * [(name, value), ...] list;
+    * [{'name': name, 'value': value'}, ...] list (HAR headers format).
+    """
+    if isinstance(headers or {}, dict):
+        return Headers(headers or {})
+
+    if isinstance(headers[0], dict):
+        return Headers([
+            (d['name'], d.get('value', ''))
+            for d in headers
+        ])
+
+    return Headers(headers)
 
 
