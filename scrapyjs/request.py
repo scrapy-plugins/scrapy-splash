@@ -25,6 +25,7 @@ class SplashRequest(scrapy.Request):
                  splash_url=None,
                  slot_policy=SlotPolicy.PER_DOMAIN,
                  splash_headers=None,
+                 dont_process_response=False,
                  **kwargs):
 
         if url is None:
@@ -38,6 +39,8 @@ class SplashRequest(scrapy.Request):
             splash_meta['splash_url'] = splash_url
         if splash_headers is not None:
             splash_meta['splash_headers'] = splash_headers
+        if dont_process_response:
+            splash_meta['dont_process_response'] = True
 
         _args = {'url': url}  # put URL to args in order to preserve #fragment
         _args.update(args or {})

@@ -80,6 +80,19 @@ def test_splash_request():
         assert getattr(response3, attr) == getattr(response2, attr)
 
 
+def test_dont_process_response():
+    mw = _get_mw()
+    req = SplashRequest("http://example.com/",
+        endpoint="render.html",
+        dont_process_response=True,
+    )
+    req2 = mw.process_request(req, None)
+    resp = Response("http://example.com/")
+    resp2 = mw.process_response(req2, resp, None)
+    assert resp2.__class__ is Response
+    assert resp2 is resp
+
+
 def test_splash_requst_parameters():
     mw = _get_mw()
 

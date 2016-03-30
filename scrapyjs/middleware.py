@@ -134,6 +134,9 @@ class SplashMiddleware(object):
             'splash/%s/response_count/%s' % (endpoint, response.status)
         )
 
+        if splash_options.get('dont_process_response', False):
+            return response
+
         # create a custom Response subclass based on response Content-Type
         # XXX: usually request is assigned to response only when all
         # downloader middlewares are executed. Here it is set earlier.

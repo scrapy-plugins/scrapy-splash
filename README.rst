@@ -121,6 +121,7 @@ Alternatively, you can use regular scrapy.Request and
             'splash_url': '<url>',      # optional; overrides SPLASH_URL
             'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
             'splash_headers': {},       # optional; a dict with headers sent to Splash
+            'dont_process_response': True, # optional, default is False
         }
     })
 
@@ -188,6 +189,11 @@ it should be easier to use in most cases.
   3. ``scrapyjs.SlotPolicy.SCRAPY_DEFAULT`` - don't do anything with slots.
      It is similar to ``SINGLE_SLOT`` policy, but can be different if you access
      other services on the same address as Splash.
+
+* ``meta['splash']['dont_process_response']`` - when set to True,
+  SplashMiddleware won't change the response to a custom scrapy.Response
+  subclass. By default for Splash requests one of SplashResponse,
+  SplashTextResponse or SplashJsonResponse is passed to the callback.
 
 Responses
 ---------
