@@ -93,32 +93,7 @@ class SplashJsonResponse(SplashResponse):
 
         # FIXME: it assumes self.request is set
         if self._splash_options().get('magic_response', True):
-
-            # response.status
-            if 'http_status' in self.data:
-                self.status = int(self.data['http_status'])
-
-            # response.url
-            if 'url' in self.data:
-                self._url = self.data['url']
-
-            # response.body
-            if 'body' in self.data:
-                self._body = base64.b64decode(self.data['body'])
-                self._cached_ubody = self._body.decode(self.encoding)
-            elif 'html' in self.data:
-                self._cached_ubody = self.data['html']
-                self._body = self._cached_ubody.encode(self.encoding)
-                self.headers[b"Content-Type"] = b"text/html; charset=utf-8"
-
-            # response.headers
-            if 'headers' in self.data:
-                self.headers = headers_to_scrapy(self.data['headers'])
-            if 'cookies' in self.data:
-                cookie_values = cookies_to_header_values(self.data['cookies'])
-                set_cookie_values = self.headers.getlist('Set-Cookie')
-                set_cookie_values.extend(to_bytes(c) for c in cookie_values)
-                self.headers.setlist('Set-Cookie', set_cookie_values)
+            self._load_from_json()
 
     @property
     def data(self):
@@ -154,3 +129,32 @@ class SplashJsonResponse(SplashResponse):
 
     def css(self, query):
         return self.selector.css(query)
+
+    def _load_from_json(self):
+        """ Fill response attributes from JSON results """
+
+        # response.status
+        if 'http_status' in self.data:
+            self.status = int(self.data['http_status'])
+
+        # response.url
+        if 'url' in self.data:
+            self._url = self.data['url']
+
+        # response.body
+        if 'body' in self.data:
+            self._body = base64.b64decode(self.data['body'])
+            self._cached_ubody = self._body.decode(self.encoding)
+        elif 'html' in self.data:
+            self._cached_ubody = self.data['html']
+            self._body = self._cached_ubody.encode(self.encoding)
+            self.headers[b"Content-Type"] = b"text/html; charset=utf-8"
+
+        # response.headers
+        if 'headers' in self.data:
+            self.headers = headers_to_scrapy(self.data['headers'])
+        if 'cookies' in self.data:
+            cookie_values = cookies_to_header_values(self.data['cookies'])
+            set_cookie_values = self.headers.getlist(b'Set-Cookie')
+            set_cookie_values.extend(to_bytes(c) for c in cookie_values)
+            self.headers.setlist(b'Set-Cookie', set_cookie_values)
