@@ -122,6 +122,7 @@ Alternatively, you can use regular scrapy.Request and
             'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
             'splash_headers': {},       # optional; a dict with headers sent to Splash
             'dont_process_response': True, # optional, default is False
+            'magic_response': False,    # optional, default is True
         }
     })
 
@@ -194,6 +195,16 @@ it should be easier to use in most cases.
   SplashMiddleware won't change the response to a custom scrapy.Response
   subclass. By default for Splash requests one of SplashResponse,
   SplashTextResponse or SplashJsonResponse is passed to the callback.
+
+* ``meta['splash']['magic_response']`` - when set to True and a JSON
+  response is received from Splash, several attributes of the response
+  (headers, body, url, status code) are filled using data returned in JSON:
+
+  * response.headers are filled from 'headers' and 'cookies' keys;
+  * response.url is set to the value of 'url' key;
+  * response.body is set to the value of 'html' key,
+    or to base64-decoded value of 'body' key;
+  * response.status is set to the value of 'http_status' key.
 
 Responses
 ---------

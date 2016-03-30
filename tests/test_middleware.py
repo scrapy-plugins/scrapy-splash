@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 import copy
 import json
+import base64
 
 import scrapy
 from scrapy.core.engine import ExecutionEngine
@@ -108,7 +109,8 @@ def test_splash_requst_parameters():
         args={
             "lua_source": "function main() end",
             "myarg": 3.0,
-        }
+        },
+        magic_response=False,
     )
     req2 = mw.process_request(req, None)
     assert req2.meta['splash'] == {
@@ -116,13 +118,14 @@ def test_splash_requst_parameters():
         'splash_url': "http://mysplash.example.com",
         'slot_policy': SlotPolicy.SINGLE_SLOT,
         'splash_headers': {'X-My-Header': 'value'},
+        'magic_response': False,
         'args': {
             'url': "http://example.com/#!start",
             'http_method': 'POST',
             'body': 'foo=bar',
             'lua_source': 'function main() end',
             'myarg': 3.0,
-        }
+        },
     }
     assert req2.callback == cb
     assert req2.headers == {
@@ -150,6 +153,58 @@ def test_splash_requst_parameters():
     assert response2.body == res_body.encode('utf8')
     assert response2.text == response2.body_as_unicode() == res_body
     assert response2.encoding == 'utf8'
+    assert response2.headers == {b'Content-Type': [b'application/json']}
+    assert response2.status == 200
+
+
+def test_magic_response():
+    mw = _get_mw()
+    req = SplashRequest('http://example.com/', magic_response=True)
+    req = mw.process_request(req, None)
+
+    resp_data = {
+        'url': "http://exmaple.com/#id42",
+        'html': '<html><body>Hello 404</body></html>',
+        'http_status': 404,
+        'headers': [
+            {'name': 'Content-Type', 'value': "text/html"},
+            {'name': 'X-My-Header', 'value': "foo"},
+        ]
+    }
+    resp = TextResponse("http://mysplash.example.com/execute",
+                        headers={b'Content-Type': b'application/json'},
+                        body=json.dumps(resp_data).encode('utf8'))
+    resp2 = mw.process_response(req, resp, None)
+    assert resp2.data == resp_data
+    assert resp2.body == b'<html><body>Hello 404</body></html>'
+    assert resp2.text == '<html><body>Hello 404</body></html>'
+    assert resp2.headers == {
+        b'Content-Type': [b'text/html'],
+        b'X-My-Header': [b'foo'],
+    }
+    assert resp2.status == 404
+    assert resp2.url == "http://exmaple.com/#id42"
+
+
+def test_magic_response2():
+    # check 'body' handling and another 'headers' format
+    mw = _get_mw()
+    req = SplashRequest('http://example.com/', magic_response=True)
+    req = mw.process_request(req, None)
+
+    resp_data = {
+        'body': base64.b64encode(b"binary data").decode('ascii'),
+        'headers': {'Content-Type': 'text/plain'},
+    }
+    resp = TextResponse("http://mysplash.example.com/execute",
+                        headers={b'Content-Type': b'application/json'},
+                        body=json.dumps(resp_data).encode('utf8'))
+    resp2 = mw.process_response(req, resp, None)
+    assert resp2.data == resp_data
+    assert resp2.body == b'binary data'
+    assert resp2.headers == {b'Content-Type': [b'text/plain']}
+    assert resp2.status == 200
+    assert resp2.url == "http://example.com/"
 
 
 def test_splash_request_no_url():
