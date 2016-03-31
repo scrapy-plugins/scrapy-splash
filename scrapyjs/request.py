@@ -50,6 +50,10 @@ class SplashRequest(scrapy.Request):
         _args.update(splash_meta.get('args', {}))
         splash_meta['args'] = _args
 
+        # This is not strictly required, but it strengthens Splash
+        # requests against AjaxCrawlMiddleware
+        meta['ajax_crawlable'] = True
+
         super(SplashRequest, self).__init__(url, callback, method, meta=meta,
                                             **kwargs)
 
