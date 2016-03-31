@@ -216,7 +216,7 @@ it should be easier to use in most cases.
 Responses
 ---------
 
-ScrapyJS provides returns Response subclasses for Splash requests:
+ScrapyJS returns Response subclasses for Splash requests:
 
 * SplashResponse is returned for binary Splash responses - e.g. for
   /render.png responses;
@@ -225,6 +225,9 @@ ScrapyJS provides returns Response subclasses for Splash requests:
 * SplashJsonResponse is returned when the result is a JSON object - e.g.
   for /render.json responses or /execute responses when script returns
   a Lua table.
+
+To use standard Response classes set ``meta['splash']['dont_process_response']=True``
+or pass ``dont_process_response=True`` argument to SplashRequest.
 
 All these responses set ``response.url`` to the URL of the original request
 (i.e. to the URL of a website you want to render), not to the URL of the
@@ -235,6 +238,24 @@ SplashJsonResponse provide extra features:
 
 * ``response.data`` attribute contains response data decoded from JSON;
   you can access it like ``response.data['html']``.
+
+* If Scrapy-Splash response magic is enabled in request (default),
+  several response attributes (headers, body, url, status code)
+  are set automatically from original response body:
+
+  * response.headers are filled from 'headers' and 'cookies' keys;
+  * response.url is set to the value of 'url' key;
+  * response.body is set to the value of 'html' key,
+    or to base64-decoded value of 'body' key;
+  * response.status is set from the value of 'http_status' key.
+
+When ``respone.body`` is updated in SplashJsonResponse
+(either from 'html' or from 'body' keys) familiar ``response.css``
+and ``response.xpath`` methods are available.
+
+To turn off special handling of JSON result keys either set
+``meta['splash']['magic_response']=False`` or pass ``magic_response=False``
+argument to SplashRequest.
 
 Examples
 ========
@@ -277,9 +298,16 @@ Get HTML contents and a screenshot::
 
         # ...
         def parse_result(self, response):
-            data = json.loads(response.body_as_unicode())
-            body = data['html']
-            png_bytes = base64.b64decode(data['png'])
+            # magic responses are turned ON by default,
+            # so the result under 'html' key is available as response.body
+            html = response.body
+
+            # you can also query the html result as usual
+            title = response.css('title').extract_first()
+
+            # full decoded JSON data is available as response.data:
+            png_bytes = base64.b64decode(response.data['png'])
+
             # ...
 
 Run a simple `Splash Lua Script`_::
@@ -368,6 +396,50 @@ Note how are arguments passed to the script::
             # ...
 
 
+Use a Lua script to get an HTML response with cookies and headers set to
+correct values::
+
+    import scrapy
+    from scrapyjs import SplashRequest
+
+    script = """
+    function last_response_headers(splash)
+      local entries = splash:history()
+      local last_entry = entries[#entries]
+      return last_entry.response.headers
+    end
+
+    function main(splash)
+      assert(splash:go(splash.args.url))
+      assert(splash:wait(0.5))
+
+      return {
+        headers = last_response_headers(splash)
+        cookies = splash:get_cookies(),
+        html = splash:html()
+      }
+    end
+    """
+
+    class MySpider(scrapy.Spider):
+
+
+        # ...
+            yield SplashRequest(url, self.parse_result,
+                endpoint='execute',
+                args={'lua_source': script}
+            )
+
+        def parse_result(self, response):
+            # here response.body contains result HTML;
+            # response.headers are filled with headers from last
+            # web page loaded to Splash;
+            # cookies from all responses and from JavaScript are collected
+            # and put into Set-Cookie response header, so that Scrapy
+            # can remember them.
+
+
+
 .. _Splash Lua Script: http://splash.readthedocs.org/en/latest/scripting-tutorial.html
 
 
@@ -436,7 +508,6 @@ aware of:
    ``sort_keys=True`` argument when preparing JSON body then binary POST body
    content could vary even if all keys and values are the same, and it means
    dupefilter and cache will work incorrectly.
-
 
 ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
 

@@ -4,6 +4,8 @@ import json
 import scrapy
 from scrapy.linkextractors import LinkExtractor
 
+from scrapyjs import SplashRequest
+
 
 class DmozSpider(scrapy.Spider):
     name = "dmoz"
@@ -16,12 +18,18 @@ class DmozSpider(scrapy.Spider):
     def parse(self, response):
         le = LinkExtractor()
         for link in le.extract_links(response):
-            yield scrapy.Request(link.url, self.parse_link, meta={
-                'splash': {
-                    'args': {'har': 1, 'html': 0},
+            yield SplashRequest(
+                link.url,
+                self.parse_link,
+                endpoint='render.json',
+                args={
+                    'har': 1,
+                    'html': 1,
                 }
-            })
+            )
 
     def parse_link(self, response):
-        res = json.loads(response.body_as_unicode())
-        print(res["har"]["log"]["pages"])
+        print("PARSED", response.real_url, response.url)
+        print(response.css("title").extract())
+        print(response.data["har"]["log"]["pages"])
+        print(response.headers.get('Content-Type'))
