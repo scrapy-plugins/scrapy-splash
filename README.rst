@@ -414,9 +414,9 @@ correct values::
       assert(splash:wait(0.5))
 
       return {
-        headers = last_response_headers(splash)
+        headers = last_response_headers(splash),
         cookies = splash:get_cookies(),
-        html = splash:html()
+        html = splash:html(),
       }
     end
     """
