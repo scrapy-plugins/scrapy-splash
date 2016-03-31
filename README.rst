@@ -60,7 +60,7 @@ Configuration
    scrapy settings. `725` is also after ``CookiesMiddleware`` (700);
    this allows Scrapy to handle cookies.
 
-   HttpCompressionMiddleware priority should be changed inorder to allow
+   HttpCompressionMiddleware priority should be changed in order to allow
    advanced response processing; see https://github.com/scrapy/scrapy/issues/1895
    for details.
 
