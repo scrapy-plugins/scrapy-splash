@@ -31,22 +31,23 @@ class SplashMiddleware(object):
     splash_extra_timeout = 5.0
     default_policy = SlotPolicy.PER_DOMAIN
 
-    def __init__(self, crawler, splash_base_url, slot_policy):
+    def __init__(self, crawler, splash_base_url, slot_policy, log_400):
         self.crawler = crawler
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
+        self.log_400 = log_400
 
     @classmethod
     def from_crawler(cls, crawler):
         splash_base_url = crawler.settings.get('SPLASH_URL',
                                                cls.default_splash_url)
+        log_400 = crawler.settings.getbool('SPLASH_LOG_400', True)
         slot_policy = crawler.settings.get('SPLASH_SLOT_POLICY',
                                            cls.default_policy)
-
         if slot_policy not in SlotPolicy._known:
             raise NotConfigured("Incorrect slot policy: %r" % slot_policy)
 
-        return cls(crawler, splash_base_url, slot_policy)
+        return cls(crawler, splash_base_url, slot_policy, log_400)
 
     def process_request(self, request, spider):
         splash_options = request.meta.get('splash')
@@ -119,7 +120,6 @@ class SplashMiddleware(object):
             body=body,
             headers=headers,
         )
-
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return req_rep
 
@@ -137,14 +137,24 @@ class SplashMiddleware(object):
         if splash_options.get('dont_process_response', False):
             return response
 
-        from scrapyjs import SplashResponse, SplashTextResponse
+        from scrapyjs import SplashResponse, SplashTextResponse, SplashJsonResponse
         if not isinstance(response, (SplashResponse, SplashTextResponse)):
             # create a custom Response subclass based on response Content-Type
             # XXX: usually request is assigned to response only when all
             # downloader middlewares are executed. Here it is set earlier.
             # Does it have any negative consequences?
             respcls = responsetypes.from_args(headers=response.headers)
-            return response.replace(cls=respcls, request=request)
+            response = response.replace(cls=respcls, request=request)
+
+        if self.log_400:
+            if response.status == 400 and isinstance(response, SplashJsonResponse):
+                logger.warning(
+                    "Bad request to Splash: %s" % response.data,
+                    {'request': request},
+                    extra={'spider': spider}
+                )
+
+        return response
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:

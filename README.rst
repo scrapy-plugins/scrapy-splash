@@ -509,6 +509,11 @@ aware of:
    content could vary even if all keys and values are the same, and it means
    dupefilter and cache will work incorrectly.
 
+6. Splash Bad Request (HTTP 400) errors are hard to debug because by default
+   response content is not displayed by Scrapy. SplashMiddleware logs content
+   of HTTP 400 Splash responses by default (it can be turned off by setting
+   ``SPLASH_LOG_400 = False`` option).
+
 ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
 
 .. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
