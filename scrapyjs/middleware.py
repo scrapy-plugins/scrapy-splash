@@ -2,12 +2,16 @@
 from __future__ import absolute_import
 import json
 import logging
+from collections import defaultdict
+
 from six.moves.urllib.parse import urljoin
+from six.moves.http_cookiejar import CookieJar
 
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 
 from scrapyjs.responsetypes import responsetypes
+from scrapyjs.cookies import SplashCookiePolicy, jar_to_har, har_to_jar
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +23,70 @@ class SlotPolicy(object):
     SCRAPY_DEFAULT = 'scrapy_default'
 
     _known = {PER_DOMAIN, SINGLE_SLOT, SCRAPY_DEFAULT}
+
+
+class SplashCookiesMiddleware(object):
+    """
+    This middleware maintains cookiejars for Splash requests.
+
+    It gets cookies from 'cookies' field in Splash JSON responses
+    and sends current cookies in 'cookies' JSON POST argument.
+
+    It should process requests before SplashMiddleware, and process responses
+    after SplashMiddleware.
+    """
+    policy = SplashCookiePolicy()
+
+    def __init__(self):
+        self.jars = defaultdict(lambda: CookieJar(policy=self.policy))
+
+    def process_request(self, request, spider):
+        """
+        For Splash requests add 'cookies' key with current
+        cookies to request.meta['splash']['args']
+        """
+        if 'splash' not in request.meta:
+            return
+
+        if '_splash_processed' in request.meta:
+            return
+
+        splash_options = request.meta['splash']
+
+        splash_args = splash_options.setdefault('args', {})
+        if 'cookies' in splash_args:  # cookies already set
+            return
+
+        if 'session_id' not in splash_options:
+            return
+
+        jar = self.jars[splash_options['session_id']]
+        splash_args['cookies'] = jar_to_har(jar)
+
+    def process_response(self, request, response, spider):
+        """
+        For Splash JSON responses add all cookies from
+        'cookies' in a response to the cookiejar.
+        """
+        from scrapyjs import SplashJsonResponse
+        if not isinstance(response, SplashJsonResponse):
+            return response
+
+        if 'cookies' not in response.data:
+            return response
+
+        if 'splash' not in request.meta:
+            return response
+
+        splash_options = request.meta['splash']
+        session_id = splash_options.get('new_session_id',
+                                        splash_options.get('session_id'))
+        if session_id is None:
+            return response
+
+        jar = self.jars[session_id]
+        har_to_jar(jar, response.data['cookies'])
+        return response
 
 
 class SplashMiddleware(object):
@@ -50,14 +118,6 @@ class SplashMiddleware(object):
         return cls(crawler, splash_base_url, slot_policy, log_400)
 
     def process_request(self, request, spider):
-        splash_options = request.meta.get('splash')
-        if not splash_options:
-            return
-
-        if request.meta.get("_splash_processed"):
-            # don't process the same request more than once
-            return
-
         if request.method not in {'GET', 'POST'}:
             logger.warn(
                 "Currently only GET and POST requests are supported by "
@@ -67,6 +127,14 @@ class SplashMiddleware(object):
             )
             return request
 
+        if 'splash' not in request.meta:
+            return
+
+        if request.meta.get("_splash_processed"):
+            # don't process the same request more than once
+            return
+
+        splash_options = request.meta['splash']
         meta = request.meta
         meta['_splash_processed'] = splash_options
 
@@ -109,9 +177,7 @@ class SplashMiddleware(object):
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
         splash_url = urljoin(splash_base_url, endpoint)
 
-        # FIXME: original HTTP headers (including cookies)
-        # are discarded.
-
+        # FIXME: original HTTP headers are discarded.
         headers = Headers({'Content-Type': 'application/json'})
         headers.update(splash_options.get('splash_headers', {}))
         req_rep = request.replace(

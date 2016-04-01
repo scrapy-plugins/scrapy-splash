@@ -101,7 +101,7 @@ def test_dont_process_response():
     assert resp2 is resp
 
 
-def test_splash_requst_parameters():
+def test_splash_request_parameters():
     mw = _get_mw()
 
     def cb():
@@ -126,6 +126,7 @@ def test_splash_requst_parameters():
         'slot_policy': SlotPolicy.SINGLE_SLOT,
         'splash_headers': {'X-My-Header': 'value'},
         'magic_response': False,
+        'session_id': 'default',
         'args': {
             'url': "http://example.com/#!start",
             'http_method': 'POST',
@@ -193,7 +194,7 @@ def test_magic_response():
     assert resp2.headers == {
         b'Content-Type': [b'text/html'],
         b'X-My-Header': [b'foo'],
-        b'Set-Cookie': [b'bar=baz', b'foo=bar', b'session=12345; Path=/'],
+        b'Set-Cookie': [b'bar=baz'],
     }
     assert resp2.status == 404
     assert resp2.url == "http://exmaple.com/#id42"

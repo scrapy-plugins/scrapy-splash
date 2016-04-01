@@ -50,6 +50,7 @@ Configuration
    priority::
 
       DOWNLOADER_MIDDLEWARES = {
+          'scrapyjs.SplashCookiesMiddleware': 723,
           'scrapyjs.SplashMiddleware': 725,
           'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
       }
@@ -57,8 +58,7 @@ Configuration
 .. note::
 
    Order `725` is just before `HttpProxyMiddleware` (750) in default
-   scrapy settings. `725` is also after ``CookiesMiddleware`` (700);
-   this allows Scrapy to handle cookies.
+   scrapy settings.
 
    HttpCompressionMiddleware priority should be changed in order to allow
    advanced response processing; see https://github.com/scrapy/scrapy/issues/1895
@@ -207,7 +207,7 @@ it should be easier to use in most cases.
   response is received from Splash, several attributes of the response
   (headers, body, url, status code) are filled using data returned in JSON:
 
-  * response.headers are filled from 'headers' and 'cookies' keys;
+  * response.headers are filled from 'headers' keys;
   * response.url is set to the value of 'url' key;
   * response.body is set to the value of 'html' key,
     or to base64-decoded value of 'body' key;
@@ -243,7 +243,7 @@ SplashJsonResponse provide extra features:
   several response attributes (headers, body, url, status code)
   are set automatically from original response body:
 
-  * response.headers are filled from 'headers' and 'cookies' keys;
+  * response.headers are filled from 'headers' keys;
   * response.url is set to the value of 'url' key;
   * response.body is set to the value of 'html' key,
     or to base64-decoded value of 'body' key;
@@ -256,6 +256,51 @@ and ``response.xpath`` methods are available.
 To turn off special handling of JSON result keys either set
 ``meta['splash']['magic_response']=False`` or pass ``magic_response=False``
 argument to SplashRequest.
+
+Session Handling
+================
+
+Splash itself is stateless - each request starts from a clean state.
+In order to support sessions the following is required:
+
+1. client must send current cookies to Splash;
+2. Splash script should make requests using these cookies and update
+   them from HTTP response headers or JavaScript code;
+3. updated cookies should be sent back to the client;
+4. client should merge current cookies wiht the updated cookies.
+
+For (2) and (3) Splash provides ``spalsh:get_cookies()`` and
+``splash:init_cookies()`` methods which can be used in Splash Lua scripts.
+
+ScrapyJS provides helpers for (1) and (4): to send current cookies
+in 'cookies' field and merge cookies back from 'cookies' response field
+set ``request.meta['splash']['args']['session_id']`` to the session
+identifier. If you only want a single session use the same ``session_id`` for
+all request; any value like '1' or 'foo' is fine.
+
+SplashRequest sets ``session_id`` automatically for ``/execute`` endpoint,
+i.e. cookie handling is enabled by default if you use SplashRequest.
+
+If you want to start from the same set of cookies, but then 'fork' sessions
+set ``request.meta['splash']['args']['new_session_id']`` in addition to
+``session_id``. Request cookies will be fetched from cookiejar ``session_id``,
+but response cookies will be merged back to the ``new_session_id`` cookiejar.
+
+For ScrapyJS session handling to work you must use ``/execute`` endpoint
+and a Lua script which accepts 'cookies' argument and returns 'cookies'
+field in the result::
+
+   function main(splash)
+       splash:init_cookies(splash.args.cookies)
+
+       -- ... your script
+
+       return {
+           cookies = splash:get_cookies(),
+           -- ... other results, e.g. html
+       }
+   end
+
 
 Examples
 ========
@@ -410,6 +455,7 @@ correct values::
     end
 
     function main(splash)
+      splash:init_cookies(splash.args.cookies)
       assert(splash:go(splash.args.url))
       assert(splash:wait(0.5))
 

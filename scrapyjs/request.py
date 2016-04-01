@@ -27,6 +27,7 @@ class SplashRequest(scrapy.Request):
                  splash_headers=None,
                  dont_process_response=False,
                  magic_response=True,
+                 session_id='default',
                  **kwargs):
 
         if url is None:
@@ -45,6 +46,10 @@ class SplashRequest(scrapy.Request):
         else:
             splash_meta.setdefault('magic_response', magic_response)
 
+        if session_id is not None:
+            if splash_meta['endpoint'].strip('/') == 'execute':
+                splash_meta.setdefault('session_id', session_id)
+
         _args = {'url': url}  # put URL to args in order to preserve #fragment
         _args.update(args or {})
         _args.update(splash_meta.get('args', {}))
@@ -62,12 +67,16 @@ class SplashRequest(scrapy.Request):
         return '_splash_processed' in self.meta
 
     @property
+    def _splash_args(self):
+        return self.meta.get('splash', {}).get('args', {})
+
+    @property
     def _original_url(self):
-        return self.meta.get('splash', {}).get('args', {}).get('url')
+        return self._splash_args.get('url')
 
     @property
     def _original_method(self):
-        return self.meta.get('splash', {}).get('args', {}).get('http_method', 'GET')
+        return self._splash_args.get('http_method', 'GET')
 
     def __str__(self):
         if not self._processed:

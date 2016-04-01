@@ -7,7 +7,7 @@ import base64
 from scrapy.http import Response, TextResponse
 from scrapy import Selector
 
-from scrapyjs.utils import headers_to_scrapy, cookies_to_header_values, to_bytes
+from scrapyjs.utils import headers_to_scrapy
 
 
 class _SplashResponseMixin(object):
@@ -78,7 +78,7 @@ class SplashJsonResponse(SplashResponse):
     (['splash']['magic_response'] is not False), several other response
     attributes (headers, body, url, status code) are set automatically:
 
-    * response.headers are filled from 'headers' and 'cookies' keys;
+    * response.headers are filled from 'headers' keys;
     * response.url is set to the value of 'url' key;
     * response.body is set to the value of 'html' key,
       or to base64-decoded value of 'body' key;
@@ -153,8 +153,3 @@ class SplashJsonResponse(SplashResponse):
         # response.headers
         if 'headers' in self.data:
             self.headers = headers_to_scrapy(self.data['headers'])
-        if 'cookies' in self.data:
-            cookie_values = cookies_to_header_values(self.data['cookies'])
-            set_cookie_values = self.headers.getlist(b'Set-Cookie')
-            set_cookie_values.extend(to_bytes(c) for c in cookie_values)
-            self.headers.setlist(b'Set-Cookie', set_cookie_values)
