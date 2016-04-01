@@ -58,6 +58,10 @@ class SplashRequest(scrapy.Request):
                                             **kwargs)
 
     @property
+    def _processed(self):
+        return '_splash_processed' in self.meta
+
+    @property
     def _original_url(self):
         return self.meta.get('splash', {}).get('args', {}).get('url')
 
@@ -66,6 +70,8 @@ class SplashRequest(scrapy.Request):
         return self.meta.get('splash', {}).get('args', {}).get('http_method', 'GET')
 
     def __str__(self):
+        if not self._processed:
+            return super(SplashRequest, self).__str__()
         return "<%s %s via %s>" % (self._original_method, self._original_url, self.url)
 
     __repr__ = __str__
