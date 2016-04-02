@@ -155,12 +155,3 @@ class SplashJsonResponse(SplashResponse):
         # response.headers
         if 'headers' in self.data:
             self.headers = headers_to_scrapy(self.data['headers'])
-
-    def replace(self, *args, **kwargs):
-        cookiejar = 'NA'
-        if 'cookiejar' in kwargs:
-            cookiejar = kwargs.pop('cookiejar')
-        resp = super(SplashJsonResponse, self).replace(*args, **kwargs)
-        resp.cookiejar = self.cookiejar if cookiejar == 'NA' else cookiejar
-        return resp
-
