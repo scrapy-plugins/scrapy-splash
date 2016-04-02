@@ -2,10 +2,17 @@
 from __future__ import absolute_import
 import json
 import logging
+from collections import defaultdict
+
 from six.moves.urllib.parse import urljoin
+from six.moves.http_cookiejar import CookieJar
 
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
+
+from scrapyjs.responsetypes import responsetypes
+from scrapyjs.cookies import jar_to_har, har_to_jar
+from scrapyjs.utils import scrapy_headers_to_unicode_dict
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +26,80 @@ class SlotPolicy(object):
     _known = {PER_DOMAIN, SINGLE_SLOT, SCRAPY_DEFAULT}
 
 
+class SplashCookiesMiddleware(object):
+    """
+    This middleware maintains cookiejars for Splash requests.
+
+    It gets cookies from 'cookies' field in Splash JSON responses
+    and sends current cookies in 'cookies' JSON POST argument.
+
+    It should process requests before SplashMiddleware, and process responses
+    after SplashMiddleware.
+    """
+    def __init__(self):
+        self.jars = defaultdict(CookieJar)
+
+    def process_request(self, request, spider):
+        """
+        For Splash requests add 'cookies' key with current
+        cookies to request.meta['splash']['args']
+        """
+        if 'splash' not in request.meta:
+            return
+
+        if '_splash_processed' in request.meta:
+            return
+
+        splash_options = request.meta['splash']
+
+        splash_args = splash_options.setdefault('args', {})
+        if 'cookies' in splash_args:  # cookies already set
+            return
+
+        if 'session_id' not in splash_options:
+            return
+
+        jar = self.jars[splash_options['session_id']]
+
+        cookies = self._get_request_cookies(request)
+        har_to_jar(jar, cookies)
+
+        splash_args['cookies'] = jar_to_har(jar)
+
+    def process_response(self, request, response, spider):
+        """
+        For Splash JSON responses add all cookies from
+        'cookies' in a response to the cookiejar.
+        """
+        from scrapyjs import SplashJsonResponse
+        if not isinstance(response, SplashJsonResponse):
+            return response
+
+        if 'cookies' not in response.data:
+            return response
+
+        if 'splash' not in request.meta:
+            return response
+
+        splash_options = request.meta['splash']
+        session_id = splash_options.get('new_session_id',
+                                        splash_options.get('session_id'))
+        if session_id is None:
+            return response
+
+        jar = self.jars[session_id]
+        har_to_jar(jar, response.data['cookies'])
+        response.cookiejar = jar
+        return response
+
+    def _get_request_cookies(self, request):
+        if isinstance(request.cookies, dict):
+            return [
+                {'name': k, 'value': v} for k, v in request.cookies.items()
+            ]
+        return request.cookies or []
+
+
 class SplashMiddleware(object):
     """
     Scrapy downloader middleware that passes requests through Splash
@@ -29,32 +110,25 @@ class SplashMiddleware(object):
     splash_extra_timeout = 5.0
     default_policy = SlotPolicy.PER_DOMAIN
 
-    def __init__(self, crawler, splash_base_url, slot_policy):
+    def __init__(self, crawler, splash_base_url, slot_policy, log_400):
         self.crawler = crawler
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
+        self.log_400 = log_400
 
     @classmethod
     def from_crawler(cls, crawler):
         splash_base_url = crawler.settings.get('SPLASH_URL',
                                                cls.default_splash_url)
+        log_400 = crawler.settings.getbool('SPLASH_LOG_400', True)
         slot_policy = crawler.settings.get('SPLASH_SLOT_POLICY',
                                            cls.default_policy)
-
         if slot_policy not in SlotPolicy._known:
             raise NotConfigured("Incorrect slot policy: %r" % slot_policy)
 
-        return cls(crawler, splash_base_url, slot_policy)
+        return cls(crawler, splash_base_url, slot_policy, log_400)
 
     def process_request(self, request, spider):
-        splash_options = request.meta.get('splash')
-        if not splash_options:
-            return
-
-        if request.meta.get("_splash_processed"):
-            # don't process the same request more than once
-            return
-
         if request.method not in {'GET', 'POST'}:
             logger.warn(
                 "Currently only GET and POST requests are supported by "
@@ -64,6 +138,14 @@ class SplashMiddleware(object):
             )
             return request
 
+        if 'splash' not in request.meta:
+            return
+
+        if request.meta.get("_splash_processed"):
+            # don't process the same request more than once
+            return
+
+        splash_options = request.meta['splash']
         meta = request.meta
         meta['_splash_processed'] = splash_options
 
@@ -76,7 +158,14 @@ class SplashMiddleware(object):
             args.setdefault('http_method', request.method)
             # XXX: non-UTF8 bodies are not supported now
             args.setdefault('body', request.body.decode('utf8'))
-        body = json.dumps(args, ensure_ascii=False)
+
+        if not splash_options.get('dont_send_headers'):
+            headers = scrapy_headers_to_unicode_dict(request.headers)
+            if headers:
+                args.setdefault('headers', headers)
+
+        body = json.dumps(args, ensure_ascii=False, sort_keys=True, indent=4)
+        # print(body)
 
         if 'timeout' in args:
             # User requested a Splash timeout explicitly.
@@ -93,9 +182,11 @@ class SplashMiddleware(object):
             # it when it's too small. Decreasing `download_timeout` is not
             # safe.
 
+            timeout_requested = float(args['timeout'])
+            timeout_expected = timeout_requested + self.splash_extra_timeout
+
             # no timeout means infinite timeout
             timeout_current = meta.get('download_timeout', 1e6)
-            timeout_expected = float(args['timeout']) + self.splash_extra_timeout
 
             if timeout_expected > timeout_current:
                 meta['download_timeout'] = timeout_expected
@@ -103,9 +194,6 @@ class SplashMiddleware(object):
         endpoint = splash_options.setdefault('endpoint', self.default_endpoint)
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
         splash_url = urljoin(splash_base_url, endpoint)
-
-        # FIXME: original HTTP headers (including cookies)
-        # are discarded.
 
         headers = Headers({'Content-Type': 'application/json'})
         headers.update(splash_options.get('splash_headers', {}))
@@ -115,17 +203,39 @@ class SplashMiddleware(object):
             body=body,
             headers=headers,
         )
-
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return req_rep
 
     def process_response(self, request, response, spider):
         splash_options = request.meta.get("_splash_processed")
-        if splash_options:
-            endpoint = splash_options['endpoint']
-            self.crawler.stats.inc_value(
-                'splash/%s/response_count/%s' % (endpoint, response.status)
-            )
+        if not splash_options:
+            return response
+
+        # update stats
+        endpoint = splash_options['endpoint']
+        self.crawler.stats.inc_value(
+            'splash/%s/response_count/%s' % (endpoint, response.status)
+        )
+
+        if splash_options.get('dont_process_response', False):
+            return response
+
+        from scrapyjs import SplashResponse, SplashTextResponse, SplashJsonResponse
+        if not isinstance(response, (SplashResponse, SplashTextResponse)):
+            # create a custom Response subclass based on response Content-Type
+            # XXX: usually request is assigned to response only when all
+            # downloader middlewares are executed. Here it is set earlier.
+            # Does it have any negative consequences?
+            respcls = responsetypes.from_args(headers=response.headers)
+            response = response.replace(cls=respcls, request=request)
+
+        if self.log_400:
+            if response.status == 400 and isinstance(response, SplashJsonResponse):
+                logger.warning(
+                    "Bad request to Splash: %s" % response.data,
+                    {'request': request},
+                    extra={'spider': spider}
+                )
 
         return response
 

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from .middleware import SplashMiddleware, SlotPolicy
+from .middleware import SplashMiddleware, SlotPolicy, SplashCookiesMiddleware
 from .dupefilter import SplashAwareDupeFilter, splash_request_fingerprint
 from .cache import SplashAwareFSCacheStorage
+from .response import SplashResponse, SplashTextResponse, SplashJsonResponse
+from .request import SplashRequest

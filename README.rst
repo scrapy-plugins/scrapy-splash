@@ -46,16 +46,23 @@ Configuration
       SPLASH_URL = 'http://192.168.59.103:8050'
 
 2. Enable the Splash middleware by adding it to ``DOWNLOADER_MIDDLEWARES``
-   in your ``settings.py`` file::
+   in your ``settings.py`` file and changing HttpCompressionMiddleware
+   priority::
 
       DOWNLOADER_MIDDLEWARES = {
+          'scrapyjs.SplashCookiesMiddleware': 723,
           'scrapyjs.SplashMiddleware': 725,
+          'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
       }
 
 .. note::
 
    Order `725` is just before `HttpProxyMiddleware` (750) in default
    scrapy settings.
+
+   HttpCompressionMiddleware priority should be changed in order to allow
+   advanced response processing; see https://github.com/scrapy/scrapy/issues/1895
+   for details.
 
 3. Set a custom ``DUPEFILTER_CLASS``::
 
@@ -80,6 +87,9 @@ Configuration
 
 Usage
 =====
+
+Requests
+--------
 
 The easiest way to render requests with Splash is to
 use ``scrapyjs.SplashRequest``::
@@ -118,6 +128,9 @@ Alternatively, you can use regular scrapy.Request and
             'splash_url': '<url>',      # optional; overrides SPLASH_URL
             'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
             'splash_headers': {},       # optional; a dict with headers sent to Splash
+            'dont_process_response': True, # optional, default is False
+            'dont_send_headers': True,  # optional, default is False
+            'magic_response': False,    # optional, default is True
         }
     })
 
@@ -140,7 +153,9 @@ it should be easier to use in most cases.
 
   Note that by default Scrapy escapes URL fragments using AJAX escaping scheme.
   If you want to pass a URL with a fragment to Splash then set ``url``
-  in ``args`` dict manually.
+  in ``args`` dict manually. This is handled automatically if you use
+  ``SplashRequest``, but you need to keep that in mind if you use raw
+  ``meta['splash']`` API.
 
   Splash 1.8+ is required to handle POST requests; in earlier Splash versions
   'http_method' and 'body' arguments are ignored. If you work with ``/execute``
@@ -184,6 +199,125 @@ it should be easier to use in most cases.
      It is similar to ``SINGLE_SLOT`` policy, but can be different if you access
      other services on the same address as Splash.
 
+* ``meta['splash']['dont_process_response']`` - when set to True,
+  SplashMiddleware won't change the response to a custom scrapy.Response
+  subclass. By default for Splash requests one of SplashResponse,
+  SplashTextResponse or SplashJsonResponse is passed to the callback.
+
+* ``meta['splash']['dont_send_headers']``: by default ScrapyJS passes
+  request headers to Splash in 'headers' JSON POST field. For all render.xxx
+  endpoints it means Scrapy header options are respected by default
+  (http://splash.readthedocs.org/en/stable/api.html#arg-headers). In Lua
+  scripts you can use ``headers`` argument of ``splash:go`` to apply the
+  passed headers: ``splash:go{url, headers=splash.args.headers}``.
+
+  Set 'dont_send_headers' to True if you don't want to pass ``headers``
+  to Splash.
+
+* ``meta['splash']['magic_response']`` - when set to True and a JSON
+  response is received from Splash, several attributes of the response
+  (headers, body, url, status code) are filled using data returned in JSON:
+
+  * response.headers are filled from 'headers' keys;
+  * response.url is set to the value of 'url' key;
+  * response.body is set to the value of 'html' key,
+    or to base64-decoded value of 'body' key;
+  * response.status is set to the value of 'http_status' key.
+
+Responses
+---------
+
+ScrapyJS returns Response subclasses for Splash requests:
+
+* SplashResponse is returned for binary Splash responses - e.g. for
+  /render.png responses;
+* SplashTextResponse is returned when the result is text - e.g. for
+  /render.html responses;
+* SplashJsonResponse is returned when the result is a JSON object - e.g.
+  for /render.json responses or /execute responses when script returns
+  a Lua table.
+
+To use standard Response classes set ``meta['splash']['dont_process_response']=True``
+or pass ``dont_process_response=True`` argument to SplashRequest.
+
+All these responses set ``response.url`` to the URL of the original request
+(i.e. to the URL of a website you want to render), not to the URL of the
+requested Splash endpoint. "True" URL is still available as
+``response.real_url``.
+
+SplashJsonResponse provide extra features:
+
+* ``response.data`` attribute contains response data decoded from JSON;
+  you can access it like ``response.data['html']``.
+
+* If Splash session handling is configured, you can access current cookies
+  as ``response.cookiejar``; it is a CookieJar instance.
+
+* If Scrapy-Splash response magic is enabled in request (default),
+  several response attributes (headers, body, url, status code)
+  are set automatically from original response body:
+
+  * response.headers are filled from 'headers' keys;
+  * response.url is set to the value of 'url' key;
+  * response.body is set to the value of 'html' key,
+    or to base64-decoded value of 'body' key;
+  * response.status is set from the value of 'http_status' key.
+
+When ``respone.body`` is updated in SplashJsonResponse
+(either from 'html' or from 'body' keys) familiar ``response.css``
+and ``response.xpath`` methods are available.
+
+To turn off special handling of JSON result keys either set
+``meta['splash']['magic_response']=False`` or pass ``magic_response=False``
+argument to SplashRequest.
+
+Session Handling
+================
+
+Splash itself is stateless - each request starts from a clean state.
+In order to support sessions the following is required:
+
+1. client (Scrapy) must send current cookies to Splash;
+2. Splash script should make requests using these cookies and update
+   them from HTTP response headers or JavaScript code;
+3. updated cookies should be sent back to the client;
+4. client should merge current cookies wiht the updated cookies.
+
+For (2) and (3) Splash provides ``spalsh:get_cookies()`` and
+``splash:init_cookies()`` methods which can be used in Splash Lua scripts.
+
+ScrapyJS provides helpers for (1) and (4): to send current cookies
+in 'cookies' field and merge cookies back from 'cookies' response field
+set ``request.meta['splash']['args']['session_id']`` to the session
+identifier. If you only want a single session use the same ``session_id`` for
+all request; any value like '1' or 'foo' is fine.
+
+For ScrapyJS session handling to work you must use ``/execute`` endpoint
+and a Lua script which accepts 'cookies' argument and returns 'cookies'
+field in the result::
+
+   function main(splash)
+       splash:init_cookies(splash.args.cookies)
+
+       -- ... your script
+
+       return {
+           cookies = splash:get_cookies(),
+           -- ... other results, e.g. html
+       }
+   end
+
+SplashRequest sets ``session_id`` automatically for ``/execute`` endpoint,
+i.e. cookie handling is enabled by default if you use SplashRequest,
+``/execute`` endpoint and a compatible Lua rendering script.
+
+If you want to start from the same set of cookies, but then 'fork' sessions
+set ``request.meta['splash']['args']['new_session_id']`` in addition to
+``session_id``. Request cookies will be fetched from cookiejar ``session_id``,
+but response cookies will be merged back to the ``new_session_id`` cookiejar.
+
+Standard Scrapy ``cookies`` argument can be used with ``SplashRequest``
+to add cookies to the current Splash cookiejar.
 
 Examples
 ========
@@ -226,9 +360,16 @@ Get HTML contents and a screenshot::
 
         # ...
         def parse_result(self, response):
-            data = json.loads(response.body_as_unicode())
-            body = data['html']
-            png_bytes = base64.b64decode(data['png'])
+            # magic responses are turned ON by default,
+            # so the result under 'html' key is available as response.body
+            html = response.body
+
+            # you can also query the html result as usual
+            title = response.css('title').extract_first()
+
+            # full decoded JSON data is available as response.data:
+            png_bytes = base64.b64decode(response.data['png'])
+
             # ...
 
 Run a simple `Splash Lua Script`_::
@@ -317,6 +458,52 @@ Note how are arguments passed to the script::
             # ...
 
 
+Use a Lua script to get an HTML response with cookies and headers set to
+correct values::
+
+    import scrapy
+    from scrapyjs import SplashRequest
+
+    script = """
+    function last_response_headers(splash)
+      local entries = splash:history()
+      local last_entry = entries[#entries]
+      return last_entry.response.headers
+    end
+
+    function main(splash)
+      splash:init_cookies(splash.args.cookies)
+      assert(splash:go{splash.args.url, headers=splash.args.headers})
+      assert(splash:wait(0.5))
+
+      return {
+        headers = last_response_headers(splash),
+        cookies = splash:get_cookies(),
+        html = splash:html(),
+      }
+    end
+    """
+
+    class MySpider(scrapy.Spider):
+
+
+        # ...
+            yield SplashRequest(url, self.parse_result,
+                endpoint='execute',
+                args={'lua_source': script},
+                headers={'X-My-Header': 'value'},
+            )
+
+        def parse_result(self, response):
+            # here response.body contains result HTML;
+            # response.headers are filled with headers from last
+            # web page loaded to Splash;
+            # cookies from all responses and from JavaScript are collected
+            # and put into Set-Cookie response header, so that Scrapy
+            # can remember them.
+
+
+
 .. _Splash Lua Script: http://splash.readthedocs.org/en/latest/scripting-tutorial.html
 
 
@@ -351,7 +538,7 @@ sure to read the observations after it::
 
         def start_requests(self):
             for url in self.start_urls:
-                body = json.dumps({"url": url, "wait": 0.5})
+                body = json.dumps({"url": url, "wait": 0.5}, sort_keys=True)
                 headers = Headers({'Content-Type': 'application/json'})
                 yield scrapy.Request(RENDER_HTML_URL, self.parse, method="POST",
                                      body=body, headers=headers)
@@ -373,9 +560,26 @@ aware of:
    in unexpected ways since delays and concurrency settings are no longer
    per-domain.
 
-3. Some options depend on each other - for example, if you use timeout_
+3. As seen by Scrapy, response.url is an URL of the Splash server.
+   scrapy-splash fixes it to be an URL of a requested page.
+   "Real" URL is still available as ``response.real_url``.
+
+4. Some options depend on each other - for example, if you use timeout_
    Splash option then you may want to set ``download_timeout``
    scrapy.Request meta key as well.
+
+5. It is easy to get it subtly wrong - e.g. if you won't use
+   ``sort_keys=True`` argument when preparing JSON body then binary POST body
+   content could vary even if all keys and values are the same, and it means
+   dupefilter and cache will work incorrectly.
+
+6. Splash Bad Request (HTTP 400) errors are hard to debug because by default
+   response content is not displayed by Scrapy. SplashMiddleware logs content
+   of HTTP 400 Splash responses by default (it can be turned off by setting
+   ``SPLASH_LOG_400 = False`` option).
+
+7. Cookie handling is tedious to implement, and you can't use Scrapy
+   built-in Cookie middleware to handle cookies when working with Splash.
 
 ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
 

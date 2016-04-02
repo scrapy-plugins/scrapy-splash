@@ -5,3 +5,5 @@ dist
 scrapyjs.egg-info
 .cache
 .coverage
+.scrapy
+htmlcov
