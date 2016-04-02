@@ -266,7 +266,7 @@ Session Handling
 Splash itself is stateless - each request starts from a clean state.
 In order to support sessions the following is required:
 
-1. client must send current cookies to Splash;
+1. client (Scrapy) must send current cookies to Splash;
 2. Splash script should make requests using these cookies and update
    them from HTTP response headers or JavaScript code;
 3. updated cookies should be sent back to the client;
@@ -280,14 +280,6 @@ in 'cookies' field and merge cookies back from 'cookies' response field
 set ``request.meta['splash']['args']['session_id']`` to the session
 identifier. If you only want a single session use the same ``session_id`` for
 all request; any value like '1' or 'foo' is fine.
-
-SplashRequest sets ``session_id`` automatically for ``/execute`` endpoint,
-i.e. cookie handling is enabled by default if you use SplashRequest.
-
-If you want to start from the same set of cookies, but then 'fork' sessions
-set ``request.meta['splash']['args']['new_session_id']`` in addition to
-``session_id``. Request cookies will be fetched from cookiejar ``session_id``,
-but response cookies will be merged back to the ``new_session_id`` cookiejar.
 
 For ScrapyJS session handling to work you must use ``/execute`` endpoint
 and a Lua script which accepts 'cookies' argument and returns 'cookies'
@@ -304,6 +296,14 @@ field in the result::
        }
    end
 
+SplashRequest sets ``session_id`` automatically for ``/execute`` endpoint,
+i.e. cookie handling is enabled by default if you use SplashRequest,
+``/execute`` endpoint and a compatible Lua rendering script.
+
+If you want to start from the same set of cookies, but then 'fork' sessions
+set ``request.meta['splash']['args']['new_session_id']`` in addition to
+``session_id``. Request cookies will be fetched from cookiejar ``session_id``,
+but response cookies will be merged back to the ``new_session_id`` cookiejar.
 
 Examples
 ========
@@ -562,6 +562,9 @@ aware of:
    response content is not displayed by Scrapy. SplashMiddleware logs content
    of HTTP 400 Splash responses by default (it can be turned off by setting
    ``SPLASH_LOG_400 = False`` option).
+
+7. Cookie handling is tedious to implement, and you can't use Scrapy
+   built-in Cookie middleware to handle cookies when working with Splash.
 
 ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
 
