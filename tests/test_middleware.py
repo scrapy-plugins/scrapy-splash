@@ -64,6 +64,7 @@ def test_splash_request():
     cookie_mw = _get_cookie_mw()
 
     req = SplashRequest("http://example.com?foo=bar&url=1&wait=100")
+    assert repr(req) == "<GET http://example.com?foo=bar&url=1&wait=100>"
 
     # check request preprocessing
     req2 = cookie_mw.process_request(req, None) or req
@@ -74,6 +75,7 @@ def test_splash_request():
     assert req2.headers == {b'Content-Type': [b'application/json']}
     assert req2.method == 'POST'
     assert isinstance(req2, SplashRequest)
+    assert repr(req2) == "<GET http://example.com?foo=bar&url=1&wait=100 via http://127.0.0.1:8050/render.html>"
 
     expected_body = {'url': req.url}
     assert json.loads(to_native_str(req2.body)) == expected_body
