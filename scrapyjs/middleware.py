@@ -59,6 +59,10 @@ class SplashCookiesMiddleware(object):
             return
 
         jar = self.jars[splash_options['session_id']]
+
+        cookies = self._get_request_cookies(request)
+        har_to_jar(jar, cookies)
+
         splash_args['cookies'] = jar_to_har(jar)
 
     def process_response(self, request, response, spider):
@@ -86,6 +90,13 @@ class SplashCookiesMiddleware(object):
         har_to_jar(jar, response.data['cookies'])
         response.cookiejar = jar
         return response
+
+    def _get_request_cookies(self, request):
+        if isinstance(request.cookies, dict):
+            return [
+                {'name': k, 'value': v} for k, v in request.cookies.items()
+            ]
+        return request.cookies or []
 
 
 class SplashMiddleware(object):

@@ -305,6 +305,9 @@ set ``request.meta['splash']['args']['new_session_id']`` in addition to
 ``session_id``. Request cookies will be fetched from cookiejar ``session_id``,
 but response cookies will be merged back to the ``new_session_id`` cookiejar.
 
+Standard Scrapy ``cookies`` argument can be used with ``SplashRequest``
+to add cookies to the current Splash cookiejar.
+
 Examples
 ========
 

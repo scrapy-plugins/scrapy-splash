@@ -192,7 +192,8 @@ def test_magic_response():
     req = SplashRequest('http://example.com/',
                         endpoint='execute',
                         args={'lua_source': 'function main() end'},
-                        magic_response=True)
+                        magic_response=True,
+                        cookies=[{'name': 'foo', 'value': 'bar'}])
     req = cookie_mw.process_request(req, None) or req
     req = mw.process_request(req, None) or req
 
@@ -207,7 +208,6 @@ def test_magic_response():
         ],
         'cookies': [
             {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
-            {'name': 'foo', 'value': 'bar'},
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2055-07-24T19:20:30Z'},
         ],
@@ -240,7 +240,8 @@ def test_magic_response():
     req = SplashRequest('http://example.com/foo',
                         endpoint='execute',
                         args={'lua_source': 'function main() end'},
-                        magic_response=True)
+                        magic_response=True,
+                        cookies={'spam': 'ham'})
     req = cookie_mw.process_request(req, None) or req
     req = mw.process_request(req, None) or req
 
@@ -265,14 +266,15 @@ def test_magic_response():
     resp2 = cookie_mw.process_response(req, resp2, None)
     assert isinstance(resp2, scrapyjs.SplashJsonResponse)
     assert resp2.data == resp_data
-    assert len(resp2.cookiejar) == 4
     cookies = [c for c in resp2.cookiejar]
-    assert {c.name for c in cookies} == {'foo', 'session', 'egg', 'bar'}
+    assert {c.name for c in cookies} == {'foo', 'session', 'egg', 'bar', 'spam'}
     for c in cookies:
         if c.name == 'session':
             assert c.expires == 2731692030
         if c.name == 'foo':
             assert c.value == ''
+        if c.name == 'spam':
+            assert c.value == 'ham'
 
 
 def test_magic_response2():
