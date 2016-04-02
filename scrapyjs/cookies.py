@@ -6,42 +6,7 @@ from __future__ import absolute_import
 import time
 import calendar
 
-from six.moves.http_cookiejar import CookieJar, Cookie, DefaultCookiePolicy
-
-
-class SplashCookiePolicy(DefaultCookiePolicy):
-    """
-    Policy for shared Splash CookieJars.
-
-    Unlike regular CookieJar we need to send all cookies in each request,
-    not only matching cookies, because Splash fetches related resources.
-    Splash handles domain/path filtering itself.
-    """
-    def set_ok_verifiability(self, cookie, request):
-        return True
-
-    def set_ok_path(self, cookie, request):
-        return True
-
-    def set_ok_domain(self, cookie, request):
-        return True
-
-    def set_ok_port(self, cookie, request):
-        return True
-
-    def return_ok(self, cookie, request):
-        """Return true if (and only if) cookie should be returned to server."""
-        return True
-
-    def domain_return_ok(self, domain, request):
-        """Return false if cookies should not be returned, given cookie domain.
-        """
-        return True
-
-    def path_return_ok(self, path, request):
-        """Return false if cookies should not be returned, given cookie path.
-        """
-        return True
+from six.moves.http_cookiejar import CookieJar, Cookie
 
 
 def jar_to_har(cookiejar):
@@ -94,21 +59,26 @@ def har_to_cookie(har_cookie):
         expires = time.strptime(har_cookie['expires'], "%Y-%m-%dT%H:%M:%SZ")
         expires_timestamp = calendar.timegm(expires)
 
-    return create_cookie(
+    kwargs = dict(
+        version=har_cookie.get('version') or 0,
+        name=har_cookie['name'],
+        value=har_cookie['value'],
+        port=None,
+        domain=har_cookie.get('domain', ''),
+        path=har_cookie.get('path', '/'),
+        secure=har_cookie.get('secure', False),
+        expires=expires_timestamp,
+        discard=False,
         comment=har_cookie.get('comment'),
         comment_url=bool(har_cookie.get('comment')),
-        discard=False,
-        domain=har_cookie.get('domain'),
-        expires=expires_timestamp,
-        name=har_cookie['name'],
-        path=har_cookie.get('path'),
-        port=None,
-        rest={'HttpOnly': har_cookie.get('httpOnly', False)},
+        rest={'HttpOnly': har_cookie.get('httpOnly')},
         rfc2109=False,
-        secure=har_cookie.get('secure', False),
-        value=har_cookie['value'],
-        version=har_cookie.get('version') or 0,
     )
+    kwargs['port_specified'] = bool(kwargs['port'])
+    kwargs['domain_specified'] = bool(kwargs['domain'])
+    kwargs['domain_initial_dot'] = kwargs['domain'].startswith('.')
+    kwargs['path_specified'] = bool(kwargs['path'])
+    return Cookie(**kwargs)
 
 
 def cookie_to_har(cookie):
@@ -138,40 +108,3 @@ def cookie_to_har(cookie):
         c['comment'] = cookie.comment
 
     return c
-
-
-# Stolen from
-# https://github.com/kennethreitz/requests/blob/master/requests/cookies.py:
-def create_cookie(name, value, **kwargs):
-    """Make a cookie from underspecified parameters.
-
-    By default, the pair of `name` and `value` will be set for the domain ''
-    and sent on every request (this is sometimes called a "supercookie").
-    """
-    result = dict(
-        version=0,
-        name=name,
-        value=value,
-        port=None,
-        domain='',
-        path='/',
-        secure=False,
-        expires=None,
-        discard=True,
-        comment=None,
-        comment_url=None,
-        rest={'HttpOnly': None},
-        rfc2109=False,)
-
-    badargs = set(kwargs) - set(result)
-    if badargs:
-        err = 'create_cookie() got unexpected keyword arguments: %s'
-        raise TypeError(err % list(badargs))
-
-    result.update(kwargs)
-    result['port_specified'] = bool(result['port'])
-    result['domain_specified'] = bool(result['domain'])
-    result['domain_initial_dot'] = result['domain'].startswith('.')
-    result['path_specified'] = bool(result['path'])
-
-    return Cookie(**result)

@@ -11,7 +11,7 @@ from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 
 from scrapyjs.responsetypes import responsetypes
-from scrapyjs.cookies import SplashCookiePolicy, jar_to_har, har_to_jar
+from scrapyjs.cookies import jar_to_har, har_to_jar
 
 
 logger = logging.getLogger(__name__)
@@ -35,10 +35,8 @@ class SplashCookiesMiddleware(object):
     It should process requests before SplashMiddleware, and process responses
     after SplashMiddleware.
     """
-    policy = SplashCookiePolicy()
-
     def __init__(self):
-        self.jars = defaultdict(lambda: CookieJar(policy=self.policy))
+        self.jars = defaultdict(CookieJar)
 
     def process_request(self, request, spider):
         """

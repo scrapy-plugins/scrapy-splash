@@ -9,14 +9,15 @@ from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
 from scrapy.http import Response, TextResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
-try:
-    from scrapy.utils.python import to_native_str
-except ImportError:
-    from scrapy.utils.python import str_to_unicode as to_native_str
 
 import scrapyjs
-from scrapyjs.middleware import SplashMiddleware, SlotPolicy
-from scrapyjs.request import SplashRequest
+from scrapyjs.utils import to_native_str
+from scrapyjs import (
+    SplashRequest,
+    SplashMiddleware,
+    SlotPolicy,
+    SplashCookiesMiddleware
+)
 
 
 def _get_crawler(settings_dict):
@@ -35,26 +36,38 @@ def _get_mw():
     return SplashMiddleware.from_crawler(crawler)
 
 
+def _get_cookie_mw():
+    return SplashCookiesMiddleware()
+
+
 def test_nosplash():
     mw = _get_mw()
+    cookie_mw = _get_cookie_mw()
     req = scrapy.Request("http://example.com")
     old_meta = copy.deepcopy(req.meta)
+
+    assert cookie_mw.process_request(req, None) is None
     assert mw.process_request(req, None) is None
     assert old_meta == req.meta
 
     # response is not changed
     response = Response("http://example.com", request=req)
     response2 = mw.process_response(req, response, None)
+    response3 = cookie_mw.process_response(req, response, None)
     assert response2 is response
-    assert response2.url == "http://example.com"
+    assert response3 is response
+    assert response3.url == "http://example.com"
 
 
 def test_splash_request():
     mw = _get_mw()
+    cookie_mw = _get_cookie_mw()
+
     req = SplashRequest("http://example.com?foo=bar&url=1&wait=100")
 
     # check request preprocessing
-    req2 = mw.process_request(req, None)
+    req2 = cookie_mw.process_request(req, None) or req
+    req2 = mw.process_request(req2, None) or req2
     assert req2 is not None
     assert req2 is not req
     assert req2.url == "http://127.0.0.1:8050/render.html"
@@ -72,6 +85,7 @@ def test_splash_request():
                             headers={b'Content-Type': b'text/html'},
                             body=b"<html><body>Hello</body></html>")
     response2 = mw.process_response(req2, response, None)
+    response2 = cookie_mw.process_response(req2, response2, None)
     assert isinstance(response2, scrapyjs.SplashTextResponse)
     assert response2 is not response
     assert response2.real_url == req2.url
@@ -103,6 +117,7 @@ def test_dont_process_response():
 
 def test_splash_request_parameters():
     mw = _get_mw()
+    cookie_mw = _get_cookie_mw()
 
     def cb():
         pass
@@ -119,7 +134,8 @@ def test_splash_request_parameters():
         },
         magic_response=False,
     )
-    req2 = mw.process_request(req, None)
+    req2 = cookie_mw.process_request(req, None) or req
+    req2 = mw.process_request(req2, None)
     assert req2.meta['splash'] == {
         'endpoint': 'execute',
         'splash_url': "http://mysplash.example.com",
@@ -131,6 +147,7 @@ def test_splash_request_parameters():
             'url': "http://example.com/#!start",
             'http_method': 'POST',
             'body': 'foo=bar',
+            'cookies': [],
             'lua_source': 'function main() end',
             'myarg': 3.0,
         },
@@ -153,6 +170,7 @@ def test_splash_request_parameters():
                             headers={b'Content-Type': b'application/json'},
                             body=res_body.encode('utf8'))
     response2 = mw.process_response(req2, response, None)
+    response2 = cookie_mw.process_response(req2, response2, None)
     assert isinstance(response2, scrapyjs.SplashJsonResponse)
     assert response2 is not response
     assert response2.real_url == req2.url
@@ -167,8 +185,14 @@ def test_splash_request_parameters():
 
 def test_magic_response():
     mw = _get_mw()
-    req = SplashRequest('http://example.com/', magic_response=True)
-    req = mw.process_request(req, None)
+    cookie_mw = _get_cookie_mw()
+
+    req = SplashRequest('http://example.com/',
+                        endpoint='execute',
+                        args={'lua_source': 'function main() end'},
+                        magic_response=True)
+    req = cookie_mw.process_request(req, None) or req
+    req = mw.process_request(req, None) or req
 
     resp_data = {
         'url': "http://exmaple.com/#id42",
@@ -180,14 +204,18 @@ def test_magic_response():
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
+            {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
             {'name': 'foo', 'value': 'bar'},
-            {'name': 'session', 'value': '12345', 'path': '/'},
+            {'name': 'session', 'value': '12345', 'path': '/',
+             'expires': '2055-07-24T19:20:30Z'},
         ],
     }
     resp = TextResponse("http://mysplash.example.com/execute",
                         headers={b'Content-Type': b'application/json'},
                         body=json.dumps(resp_data).encode('utf8'))
     resp2 = mw.process_response(req, resp, None)
+    resp2 = cookie_mw.process_response(req, resp2, None)
+    assert isinstance(resp2, scrapyjs.SplashJsonResponse)
     assert resp2.data == resp_data
     assert resp2.body == b'<html><body>Hello 404</body></html>'
     assert resp2.text == '<html><body>Hello 404</body></html>'
@@ -198,6 +226,51 @@ def test_magic_response():
     }
     assert resp2.status == 404
     assert resp2.url == "http://exmaple.com/#id42"
+    assert len(resp2.cookiejar) == 3
+    cookies = [c for c in resp2.cookiejar]
+    assert {(c.name, c.value) for c in cookies} == {
+        ('bar', 'baz'),
+        ('foo', 'bar'),
+        ('session', '12345')
+    }
+
+    # send second request using the same session and check the resulting cookies
+    req = SplashRequest('http://example.com/foo',
+                        endpoint='execute',
+                        args={'lua_source': 'function main() end'},
+                        magic_response=True)
+    req = cookie_mw.process_request(req, None) or req
+    req = mw.process_request(req, None) or req
+
+    resp_data = {
+        'html': '<html><body>Hello</body></html>',
+        'headers': [
+            {'name': 'Content-Type', 'value': "text/html"},
+            {'name': 'X-My-Header', 'value': "foo"},
+            {'name': 'Set-Cookie', 'value': "bar=baz"},
+        ],
+        'cookies': [
+            {'name': 'egg', 'value': 'spam'},
+            {'name': 'foo', 'value': ''},
+            {'name': 'session', 'value': '12345', 'path': '/',
+             'expires': '2056-07-24T19:20:30Z'},
+        ],
+    }
+    resp = TextResponse("http://mysplash.example.com/execute",
+                        headers={b'Content-Type': b'application/json'},
+                        body=json.dumps(resp_data).encode('utf8'))
+    resp2 = mw.process_response(req, resp, None)
+    resp2 = cookie_mw.process_response(req, resp2, None)
+    assert isinstance(resp2, scrapyjs.SplashJsonResponse)
+    assert resp2.data == resp_data
+    assert len(resp2.cookiejar) == 4
+    cookies = [c for c in resp2.cookiejar]
+    assert {c.name for c in cookies} == {'foo', 'session', 'egg', 'bar'}
+    for c in cookies:
+        if c.name == 'session':
+            assert c.expires == 2731692030
+        if c.name == 'foo':
+            assert c.value == ''
 
 
 def test_magic_response2():
@@ -231,6 +304,7 @@ def test_magic_response_caching(tmpdir):
     })
     cache_mw = HttpCacheMiddleware.from_crawler(crawler)
     mw = _get_mw()
+    cookie_mw = _get_cookie_mw()
 
     def _get_req():
         return SplashRequest(
@@ -244,6 +318,7 @@ def test_magic_response_caching(tmpdir):
 
     # first call
     req = _get_req()
+    req = cookie_mw.process_request(req, spider) or req
     req = mw.process_request(req, spider)
     req = cache_mw.process_request(req, spider) or req
     assert isinstance(req, scrapy.Request)  # first call; the cache is empty
@@ -259,6 +334,7 @@ def test_magic_response_caching(tmpdir):
 
     resp2 = cache_mw.process_response(req, resp, spider)
     resp3 = mw.process_response(req, resp2, spider)
+    resp3 = cookie_mw.process_response(req, resp3, spider)
 
     assert resp3.text == "<html><body>Hello</body></html>"
     assert resp3.css("body").extract_first() == "<body>Hello</body>"
@@ -266,6 +342,7 @@ def test_magic_response_caching(tmpdir):
 
     # second call
     req = _get_req()
+    req = cookie_mw.process_request(req, spider) or req
     req = mw.process_request(req, spider)
     cached_resp = cache_mw.process_request(req, spider) or req
 
@@ -274,6 +351,7 @@ def test_magic_response_caching(tmpdir):
     assert cached_resp.body == resp_body
     resp2_1 = cache_mw.process_response(req, cached_resp, spider)
     resp3_1 = mw.process_response(req, resp2_1, spider)
+    resp3_1 = cookie_mw.process_response(req, resp3_1, spider)
 
     assert isinstance(resp3_1, scrapyjs.SplashJsonResponse)
     assert resp3_1.body == b"<html><body>Hello</body></html>"
