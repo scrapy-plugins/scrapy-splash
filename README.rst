@@ -224,6 +224,8 @@ it should be easier to use in most cases.
     or to base64-decoded value of 'body' key;
   * response.status is set to the value of 'http_status' key.
 
+  This option is set to True by default if you use SplashRequest.
+
 Responses
 ---------
 
