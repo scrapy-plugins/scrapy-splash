@@ -12,6 +12,7 @@ from scrapy.http.headers import Headers
 
 from scrapyjs.responsetypes import responsetypes
 from scrapyjs.cookies import jar_to_har, har_to_jar
+from scrapyjs.utils import scrapy_headers_to_unicode_dict
 
 
 logger = logging.getLogger(__name__)
@@ -157,7 +158,14 @@ class SplashMiddleware(object):
             args.setdefault('http_method', request.method)
             # XXX: non-UTF8 bodies are not supported now
             args.setdefault('body', request.body.decode('utf8'))
-        body = json.dumps(args, ensure_ascii=False, sort_keys=True)
+
+        if not splash_options.get('dont_send_headers'):
+            headers = scrapy_headers_to_unicode_dict(request.headers)
+            if headers:
+                args.setdefault('headers', headers)
+
+        body = json.dumps(args, ensure_ascii=False, sort_keys=True, indent=4)
+        # print(body)
 
         if 'timeout' in args:
             # User requested a Splash timeout explicitly.
@@ -187,7 +195,6 @@ class SplashMiddleware(object):
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
         splash_url = urljoin(splash_base_url, endpoint)
 
-        # FIXME: original HTTP headers are discarded.
         headers = Headers({'Content-Type': 'application/json'})
         headers.update(splash_options.get('splash_headers', {}))
         req_rep = request.replace(

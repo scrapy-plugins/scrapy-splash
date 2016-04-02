@@ -135,6 +135,7 @@ def test_splash_request_parameters():
             "myarg": 3.0,
         },
         magic_response=False,
+        headers={'X-My-Header': 'value'}
     )
     req2 = cookie_mw.process_request(req, None) or req
     req2 = mw.process_request(req2, None)
@@ -152,6 +153,9 @@ def test_splash_request_parameters():
             'cookies': [],
             'lua_source': 'function main() end',
             'myarg': 3.0,
+            'headers': {
+                'X-My-Header': 'value',
+            }
         },
     }
     assert req2.callback == cb
@@ -280,8 +284,10 @@ def test_magic_response():
 def test_magic_response2():
     # check 'body' handling and another 'headers' format
     mw = _get_mw()
-    req = SplashRequest('http://example.com/', magic_response=True)
+    req = SplashRequest('http://example.com/', magic_response=True,
+                        headers={'foo': 'bar'}, dont_send_headers=True)
     req = mw.process_request(req, None)
+    assert 'headers' not in req.meta['splash']['args']
 
     resp_data = {
         'body': base64.b64encode(b"binary data").decode('ascii'),

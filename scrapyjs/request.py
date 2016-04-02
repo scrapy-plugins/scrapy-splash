@@ -26,6 +26,7 @@ class SplashRequest(scrapy.Request):
                  slot_policy=SlotPolicy.PER_DOMAIN,
                  splash_headers=None,
                  dont_process_response=False,
+                 dont_send_headers=False,
                  magic_response=True,
                  session_id='default',
                  **kwargs):
@@ -45,6 +46,8 @@ class SplashRequest(scrapy.Request):
             splash_meta['dont_process_response'] = True
         else:
             splash_meta.setdefault('magic_response', magic_response)
+        if dont_send_headers:
+            splash_meta['dont_send_headers'] = True
 
         if session_id is not None:
             if splash_meta['endpoint'].strip('/') == 'execute':

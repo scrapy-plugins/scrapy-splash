@@ -66,3 +66,12 @@ def headers_to_scrapy(headers):
     return Headers(headers)
 
 
+def scrapy_headers_to_unicode_dict(headers):
+    """
+    Convert scrapy.http.Headers instance to a dictionary
+    suitable for JSON encoding.
+    """
+    return {
+        to_unicode(key): to_unicode(b','.join(value))
+        for key, value in headers.items()
+    }

@@ -129,6 +129,7 @@ Alternatively, you can use regular scrapy.Request and
             'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
             'splash_headers': {},       # optional; a dict with headers sent to Splash
             'dont_process_response': True, # optional, default is False
+            'dont_send_headers': True,  # optional, default is False
             'magic_response': False,    # optional, default is True
         }
     })
@@ -202,6 +203,16 @@ it should be easier to use in most cases.
   SplashMiddleware won't change the response to a custom scrapy.Response
   subclass. By default for Splash requests one of SplashResponse,
   SplashTextResponse or SplashJsonResponse is passed to the callback.
+
+* ``meta['splash']['dont_send_headers']``: by default ScrapyJS passes
+  request headers to Splash in 'headers' JSON POST field. For all render.xxx
+  endpoints it means Scrapy header options are respected by default
+  (http://splash.readthedocs.org/en/stable/api.html#arg-headers). In Lua
+  scripts you can use ``headers`` argument of ``splash:go`` to apply the
+  passed headers: ``splash:go{url, headers=splash.args.headers}``.
+
+  Set 'dont_send_headers' to True if you don't want to pass ``headers``
+  to Splash.
 
 * ``meta['splash']['magic_response']`` - when set to True and a JSON
   response is received from Splash, several attributes of the response
@@ -462,7 +473,7 @@ correct values::
 
     function main(splash)
       splash:init_cookies(splash.args.cookies)
-      assert(splash:go(splash.args.url))
+      assert(splash:go{splash.args.url, headers=splash.args.headers})
       assert(splash:wait(0.5))
 
       return {
@@ -479,7 +490,8 @@ correct values::
         # ...
             yield SplashRequest(url, self.parse_result,
                 endpoint='execute',
-                args={'lua_source': script}
+                args={'lua_source': script},
+                headers={'X-My-Header': 'value'},
             )
 
         def parse_result(self, response):
