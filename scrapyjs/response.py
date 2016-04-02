@@ -72,7 +72,8 @@ class SplashTextResponse(_SplashResponseMixin, TextResponse):
 class SplashJsonResponse(SplashResponse):
     """
     Splash Response with JSON data. It provides a convenient way to access
-    parsed JSON response using ``response.data`` attribute.
+    parsed JSON response using ``response.data`` attribute and exposes
+    current Splash cookiejar when it is available.
 
     If Scrapy-Splash response magic is enabled in request
     (['splash']['magic_response'] is not False), several other response
@@ -85,6 +86,7 @@ class SplashJsonResponse(SplashResponse):
     * response.status is set from the value of 'http_status' key.
     """
     def __init__(self, *args, **kwargs):
+        self.cookiejar = None
         self._cached_ubody = None
         self._cached_data = None
         self._cached_selector = None
@@ -153,3 +155,12 @@ class SplashJsonResponse(SplashResponse):
         # response.headers
         if 'headers' in self.data:
             self.headers = headers_to_scrapy(self.data['headers'])
+
+    def replace(self, *args, **kwargs):
+        cookiejar = 'NA'
+        if 'cookiejar' in kwargs:
+            cookiejar = kwargs.pop('cookiejar')
+        resp = super(SplashJsonResponse, self).replace(*args, **kwargs)
+        resp.cookiejar = self.cookiejar if cookiejar == 'NA' else cookiejar
+        return resp
+

@@ -239,6 +239,9 @@ SplashJsonResponse provide extra features:
 * ``response.data`` attribute contains response data decoded from JSON;
   you can access it like ``response.data['html']``.
 
+* If Splash session handling is configured, you can access current cookies
+  as ``response.cookiejar``; it is a CookieJar instance.
+
 * If Scrapy-Splash response magic is enabled in request (default),
   several response attributes (headers, body, url, status code)
   are set automatically from original response body:
