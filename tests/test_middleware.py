@@ -146,6 +146,7 @@ def test_splash_request_parameters():
         'splash_headers': {'X-My-Header': 'value'},
         'magic_response': False,
         'session_id': 'default',
+        'http_status_from_error_code': True,
         'args': {
             'url': "http://example.com/#!start",
             'http_method': 'POST',
@@ -302,6 +303,32 @@ def test_magic_response2():
     assert resp2.headers == {b'Content-Type': [b'text/plain']}
     assert resp2.status == 200
     assert resp2.url == "http://example.com/"
+
+
+def test_magic_response_http_error():
+    mw = _get_mw()
+    req = SplashRequest('http://example.com/foo')
+    req = mw.process_request(req, None)
+
+    resp_data = {
+        "info": {
+            "error": "http404",
+            "message": "Lua error: [string \"function main(splash)\r...\"]:3: http404",
+            "line_number": 3,
+            "type": "LUA_ERROR",
+            "source": "[string \"function main(splash)\r...\"]"
+        },
+        "description": "Error happened while executing Lua script",
+        "error": 400,
+        "type": "ScriptError"
+    }
+    resp = TextResponse("http://mysplash.example.com/execute",
+                        headers={b'Content-Type': b'application/json'},
+                        body=json.dumps(resp_data).encode('utf8'))
+    resp = mw.process_response(req, resp, None)
+    assert resp.data == resp_data
+    assert resp.status == 404
+    assert resp.url == "http://example.com/foo"
 
 
 def test_magic_response_caching(tmpdir):

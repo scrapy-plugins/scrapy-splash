@@ -214,6 +214,12 @@ it should be easier to use in most cases.
   Set 'dont_send_headers' to True if you don't want to pass ``headers``
   to Splash.
 
+* ``meta['splash']['http_status_from_error_code']`` - set response.status
+  to HTTP error code when ``assert(splash:go(..))`` fails; it requires
+  ``meta['splash']['magic_response']=True``. ``http_status_from_error_code``
+  option is False by default if you use raw meta API;
+  SplashRequest sets it to True by default.
+
 * ``meta['splash']['magic_response']`` - when set to True and a JSON
   response is received from Splash, several attributes of the response
   (headers, body, url, status code) are filled using data returned in JSON:
@@ -223,6 +229,9 @@ it should be easier to use in most cases.
   * response.body is set to the value of 'html' key,
     or to base64-decoded value of 'body' key;
   * response.status is set to the value of 'http_status' key.
+    When ``meta['splash']['http_status_from_error_code']`` is True
+    and ``assert(splash:go(..))`` fails with an HTTP error
+    response.status is also set to HTTP error code.
 
   This option is set to True by default if you use SplashRequest.
 

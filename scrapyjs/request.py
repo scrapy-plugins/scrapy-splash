@@ -29,6 +29,7 @@ class SplashRequest(scrapy.Request):
                  dont_send_headers=False,
                  magic_response=True,
                  session_id='default',
+                 http_status_from_error_code=True,
                  **kwargs):
 
         if url is None:
@@ -48,6 +49,8 @@ class SplashRequest(scrapy.Request):
             splash_meta.setdefault('magic_response', magic_response)
         if dont_send_headers:
             splash_meta['dont_send_headers'] = True
+        if http_status_from_error_code:
+            splash_meta['http_status_from_error_code'] = True
 
         if session_id is not None:
             if splash_meta['endpoint'].strip('/') == 'execute':

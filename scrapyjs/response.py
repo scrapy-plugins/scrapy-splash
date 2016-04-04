@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import json
 import base64
+import re
 
 from scrapy.http import Response, TextResponse
 from scrapy import Selector
@@ -138,6 +139,15 @@ class SplashJsonResponse(SplashResponse):
         # response.status
         if 'http_status' in self.data:
             self.status = int(self.data['http_status'])
+        elif self._splash_options().get('http_status_from_error_code', False):
+            if 'error' in self.data:
+                try:
+                    error = self.data['info']['error']
+                except KeyError:
+                    error = ''
+                http_code_m = re.match(r'http(\d{3})', error)
+                if http_code_m:
+                    self.status = int(http_code_m.group(1))
 
         # response.url
         if 'url' in self.data:
