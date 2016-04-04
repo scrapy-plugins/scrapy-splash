@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import scrapy
 
 from scrapyjs import SlotPolicy
+from scrapyjs.utils import to_native_str
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
@@ -34,6 +35,7 @@ class SplashRequest(scrapy.Request):
 
         if url is None:
             url = 'about:blank'
+        url = to_native_str(url)
 
         meta = kwargs.pop('meta', {})
         splash_meta = meta.setdefault('splash', {})
