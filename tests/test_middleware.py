@@ -305,6 +305,23 @@ def test_magic_response2():
     assert resp2.url == "http://example.com/"
 
 
+def test_unicode_url():
+    mw = _get_mw()
+    req = SplashRequest(
+        # note unicode URL
+        u"http://example.com/", endpoint='execute')
+    req2 = mw.process_request(req, None)
+    res = {'html': '<html><body>Hello</body></html>'}
+    res_body = json.dumps(res)
+    response = TextResponse("http://mysplash.example.com/execute",
+                            # Scrapy doesn't pass request to constructor
+                            # request=req2,
+                            headers={b'Content-Type': b'application/json'},
+                            body=res_body.encode('utf8'))
+    response2 = mw.process_response(req2, response, None)
+    assert response2.url == "http://example.com/"
+
+
 def test_magic_response_http_error():
     mw = _get_mw()
     req = SplashRequest('http://example.com/foo')
