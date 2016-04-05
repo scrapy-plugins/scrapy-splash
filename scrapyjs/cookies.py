@@ -97,7 +97,7 @@ def cookie_to_har(cookie):
         c['domain'] = cookie.domain
 
     if cookie.expires:
-        tm = time.localtime(cookie.expires)
+        tm = time.gmtime(cookie.expires)
         c['expires'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", tm)
 
     http_only = cookie.get_nonstandard_attr('HttpOnly')
