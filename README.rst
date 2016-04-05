@@ -299,7 +299,7 @@ For (2) and (3) Splash provides ``spalsh:get_cookies()`` and
 
 ScrapyJS provides helpers for (1) and (4): to send current cookies
 in 'cookies' field and merge cookies back from 'cookies' response field
-set ``request.meta['splash']['args']['session_id']`` to the session
+set ``request.meta['splash']['session_id']`` to the session
 identifier. If you only want a single session use the same ``session_id`` for
 all request; any value like '1' or 'foo' is fine.
 
@@ -323,7 +323,7 @@ i.e. cookie handling is enabled by default if you use SplashRequest,
 ``/execute`` endpoint and a compatible Lua rendering script.
 
 If you want to start from the same set of cookies, but then 'fork' sessions
-set ``request.meta['splash']['args']['new_session_id']`` in addition to
+set ``request.meta['splash']['new_session_id']`` in addition to
 ``session_id``. Request cookies will be fetched from cookiejar ``session_id``,
 but response cookies will be merged back to the ``new_session_id`` cookiejar.
 
