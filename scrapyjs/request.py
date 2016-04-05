@@ -31,13 +31,14 @@ class SplashRequest(scrapy.Request):
                  magic_response=True,
                  session_id='default',
                  http_status_from_error_code=True,
+                 meta=None,
                  **kwargs):
 
         if url is None:
             url = 'about:blank'
         url = to_native_str(url)
 
-        meta = kwargs.pop('meta', {})
+        meta = meta or {}
         splash_meta = meta.setdefault('splash', {})
         splash_meta.setdefault('endpoint', endpoint)
         splash_meta.setdefault('slot_policy', slot_policy)
