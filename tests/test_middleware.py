@@ -259,7 +259,7 @@ def test_magic_response():
         ],
         'cookies': [
             {'name': 'egg', 'value': 'spam'},
-            {'name': 'foo', 'value': ''},
+           #{'name': 'foo', 'value': ''},  -- this won't be in response
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2056-07-24T19:20:30Z'},
         ],
