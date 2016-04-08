@@ -88,7 +88,9 @@ class SplashCookiesMiddleware(object):
             return response
 
         jar = self.jars[session_id]
-        har_to_jar(jar, response.data['cookies'])
+        request_cookies = request.meta['_splash_processed']['args']\
+                          .get('cookies', [])
+        har_to_jar(jar, response.data['cookies'], request_cookies)
         response.cookiejar = jar
         return response
 

@@ -212,6 +212,7 @@ def test_magic_response():
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
+            {'name': 'foo', 'value': 'bar'},
             {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2055-07-24T19:20:30Z'},
@@ -258,8 +259,10 @@ def test_magic_response():
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
+            {'name': 'spam', 'value': 'ham'},
             {'name': 'egg', 'value': 'spam'},
-            {'name': 'foo', 'value': ''},
+            {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
+           #{'name': 'foo', 'value': ''},  -- this won't be in response
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2056-07-24T19:20:30Z'},
         ],
@@ -272,14 +275,68 @@ def test_magic_response():
     assert isinstance(resp2, scrapyjs.SplashJsonResponse)
     assert resp2.data == resp_data
     cookies = [c for c in resp2.cookiejar]
-    assert {c.name for c in cookies} == {'foo', 'session', 'egg', 'bar', 'spam'}
+    assert {c.name for c in cookies} == {'session', 'egg', 'bar', 'spam'}
     for c in cookies:
         if c.name == 'session':
             assert c.expires == 2731692030
-        if c.name == 'foo':
-            assert c.value == ''
         if c.name == 'spam':
             assert c.value == 'ham'
+
+
+def test_cookies():
+    mw = _get_mw()
+    cookie_mw = _get_cookie_mw()
+
+    def request_with_cookies(cookies):
+        req = SplashRequest(
+            'http://example.com/foo',
+            endpoint='execute',
+            args={'lua_source': 'function main() end'},
+            magic_response=True,
+            cookies=cookies)
+        req = cookie_mw.process_request(req, None) or req
+        req = mw.process_request(req, None) or req
+        return req
+
+    def response_with_cookies(req, cookies):
+        resp_data = {
+            'html': '<html><body>Hello</body></html>',
+            'headers': [],
+            'cookies': cookies,
+        }
+        resp = TextResponse(
+            'http://mysplash.example.com/execute',
+            headers={b'Content-Type': b'application/json'},
+            body=json.dumps(resp_data).encode('utf8'))
+        resp = mw.process_response(req, resp, None)
+        resp = cookie_mw.process_response(req, resp, None)
+        return resp
+
+    # Concurent requests
+    req1 = request_with_cookies({'spam': 'ham'})
+    req2 = request_with_cookies({'bom': 'bam'})
+    resp1 = response_with_cookies(req1, [
+        {'name': 'spam', 'value': 'ham'},
+        {'name': 'spam_x', 'value': 'ham_x'},
+    ])
+    resp2 = response_with_cookies(req2, [
+        {'name': 'spam', 'value': 'ham'},  # because req2 was made after req1
+        {'name': 'bom_x', 'value': 'bam_x'},
+    ])
+    assert resp1.cookiejar is resp2.cookiejar
+    cookies = {c.name: c.value for c in resp1.cookiejar}
+    assert cookies == {'spam': 'ham', 'spam_x': 'ham_x', 'bom_x': 'bam_x'}
+
+    # Removing already removed
+    req1 = request_with_cookies({'spam': 'ham'})
+    req2 = request_with_cookies({'spam': 'ham', 'pom': 'pam'})
+    resp2 = response_with_cookies(req2, [
+        {'name': 'pom', 'value': 'pam'},
+    ])
+    resp1 = response_with_cookies(req1, [])
+    assert resp1.cookiejar is resp2.cookiejar
+    cookies = {c.name: c.value for c in resp1.cookiejar}
+    assert cookies == {'pom': 'pam'}
 
 
 def test_magic_response2():

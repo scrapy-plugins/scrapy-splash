@@ -14,10 +14,28 @@ def jar_to_har(cookiejar):
     return [cookie_to_har(c) for c in cookiejar]
 
 
-def har_to_jar(cookiejar, har_cookies):
-    """ Add HAR cookies to the cookiejar """
+def har_to_jar(cookiejar, har_cookies, request_cookies=None):
+    """ Add HAR cookies to the cookiejar.
+    If request_cookies is given, remove cookies absent from har_cookies
+    but present in request_cookies (they were removed). """
+    har_cookie_keys = set()
     for c in har_cookies:
-        cookiejar.set_cookie(har_to_cookie(c))
+        cookie = har_to_cookie(c)
+        cookiejar.set_cookie(cookie)
+        har_cookie_keys.add(_cookie_key(cookie))
+    if request_cookies:
+        for c in request_cookies:
+            cookie = har_to_cookie(c)
+            if _cookie_key(cookie) not in har_cookie_keys:
+                # We sent it but it did not come back: remove it
+                try:
+                    cookiejar.clear(cookie.domain, cookie.path, cookie.name)
+                except KeyError:
+                    pass  # It could have been already removed
+
+
+def _cookie_key(cookie):
+    return (cookie.domain, cookie.path, cookie.name)
 
 
 def har_to_cookie(har_cookie):
