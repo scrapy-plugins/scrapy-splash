@@ -208,10 +208,11 @@ def test_magic_response():
         'http_status': 404,
         'headers': [
             {'name': 'Content-Type', 'value': "text/html"},
-            {'name': 'X-My-Header', 'value': "foo"},
+            {'name': 'X-My-Header', 'value': "foo2"},
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
+            {'name': 'foo', 'value': 'bar'},
             {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2055-07-24T19:20:30Z'},
@@ -228,7 +229,7 @@ def test_magic_response():
     assert resp2.text == '<html><body>Hello 404</body></html>'
     assert resp2.headers == {
         b'Content-Type': [b'text/html'],
-        b'X-My-Header': [b'foo'],
+        b'X-My-Header': [b'foo2'],
         b'Set-Cookie': [b'bar=baz'],
     }
     assert resp2.status == 404
@@ -254,12 +255,14 @@ def test_magic_response():
         'html': '<html><body>Hello</body></html>',
         'headers': [
             {'name': 'Content-Type', 'value': "text/html"},
-            {'name': 'X-My-Header', 'value': "foo"},
+            {'name': 'X-My-Header', 'value': "foo2"},
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
             {'name': 'egg', 'value': 'spam'},
-           #{'name': 'foo', 'value': ''},  -- this won't be in response
+            {'name': 'spam', 'value': 'ham'},
+            # foo was removed
+            {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2056-07-24T19:20:30Z'},
         ],
@@ -272,12 +275,10 @@ def test_magic_response():
     assert isinstance(resp2, scrapyjs.SplashJsonResponse)
     assert resp2.data == resp_data
     cookies = [c for c in resp2.cookiejar]
-    assert {c.name for c in cookies} == {'foo', 'session', 'egg', 'bar', 'spam'}
+    assert {c.name for c in cookies} == {'session', 'egg', 'bar', 'spam'}
     for c in cookies:
         if c.name == 'session':
             assert c.expires == 2731692030
-        if c.name == 'foo':
-            assert c.value == ''
         if c.name == 'spam':
             assert c.value == 'ham'
 
