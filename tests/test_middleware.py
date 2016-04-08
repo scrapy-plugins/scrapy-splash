@@ -212,6 +212,7 @@ def test_magic_response():
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
+            {'name': 'foo', 'value': 'bar'},
             {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2055-07-24T19:20:30Z'},
@@ -258,7 +259,9 @@ def test_magic_response():
             {'name': 'Set-Cookie', 'value': "bar=baz"},
         ],
         'cookies': [
+            {'name': 'spam', 'value': 'ham'},
             {'name': 'egg', 'value': 'spam'},
+            {'name': 'bar', 'value': 'baz', 'domain': '.example.com'},
            #{'name': 'foo', 'value': ''},  -- this won't be in response
             {'name': 'session', 'value': '12345', 'path': '/',
              'expires': '2056-07-24T19:20:30Z'},
@@ -272,12 +275,10 @@ def test_magic_response():
     assert isinstance(resp2, scrapyjs.SplashJsonResponse)
     assert resp2.data == resp_data
     cookies = [c for c in resp2.cookiejar]
-    assert {c.name for c in cookies} == {'foo', 'session', 'egg', 'bar', 'spam'}
+    assert {c.name for c in cookies} == {'session', 'egg', 'bar', 'spam'}
     for c in cookies:
         if c.name == 'session':
             assert c.expires == 2731692030
-        if c.name == 'foo':
-            assert c.value == ''
         if c.name == 'spam':
             assert c.value == 'ham'
 
