@@ -28,7 +28,10 @@ def har_to_jar(cookiejar, har_cookies, request_cookies=None):
             cookie = har_to_cookie(c)
             if _cookie_key(cookie) not in har_cookie_keys:
                 # We sent it but it did not come back: remove it
-                cookiejar.clear(cookie.domain, cookie.path, cookie.name)
+                try:
+                    cookiejar.clear(cookie.domain, cookie.path, cookie.name)
+                except KeyError:
+                    pass  # It could have been already removed
 
 
 def _cookie_key(cookie):
