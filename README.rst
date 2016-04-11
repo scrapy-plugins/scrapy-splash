@@ -234,6 +234,9 @@ it should be easier to use in most cases.
     response.status is also set to HTTP error code.
 
   This option is set to True by default if you use SplashRequest.
+  Note that if you are using ``render.html`` endpoint, only response.url
+  and response.body are filled.
+
 
 Responses
 ---------
