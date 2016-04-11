@@ -1,8 +1,8 @@
 Changes
 =======
 
-TBA
----
+0.3 (2016-04-11)
+----------------
 
 Package is renamed from ``scrapyjs`` to ``scrapy-splash``.
 
