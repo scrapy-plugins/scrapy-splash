@@ -11,7 +11,7 @@ setup(
     maintainer='Mikhail Korobov',
     maintainer_email='kmike84@gmail.com',
     license='BSD',
-    packages=['scrapy-splash'],
+    packages=['scrapy_splash'],
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',
