@@ -36,7 +36,6 @@ and headers.
 * it is now possible to pass custom headers to Splash server itself;
 * test coverage reports are enabled.
 
-
 0.2 (2016-03-26)
 ----------------
 
