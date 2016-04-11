@@ -3,7 +3,7 @@
 build
 dist
 scrapyjs.egg-info
-scrapy-splash.egg-info
+scrapy_splash.egg-info
 .cache
 .coverage
 .scrapy
