@@ -163,7 +163,7 @@ it should be easier to use in most cases.
   ``http_method`` and ``body`` arguments in your Lua script manually.
 
 * ``meta['splash']['endpoint']`` is the Splash endpoint to use.
-   In case of SplashRequest
+  In case of SplashRequest
   `render.html <http://splash.readthedocs.org/en/latest/api.html#render-html>`_
   is used by default. If you're using raw scrapy.Request then
   `render.json <http://splash.readthedocs.org/en/latest/api.html#render-json>`_
