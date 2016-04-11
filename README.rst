@@ -234,8 +234,10 @@ it should be easier to use in most cases.
     response.status is also set to HTTP error code.
 
   This option is set to True by default if you use SplashRequest.
-  Note that if you are using ``render.html`` endpoint, only response.url
-  and response.body are filled.
+  ``render.json`` and ``execute`` endpoints may not have all the necessary
+  keys/values in the response.
+  For non-JSON endpoints, only url is filled, regardless of the
+  ``magic_response`` setting.
 
 
 Responses
