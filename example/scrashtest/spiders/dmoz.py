@@ -4,7 +4,7 @@ import json
 import scrapy
 from scrapy.linkextractors import LinkExtractor
 
-from scrapyjs import SplashRequest
+from scrapy_splash import SplashRequest
 
 
 class DmozSpider(scrapy.Spider):

@@ -10,9 +10,9 @@ from six.moves.http_cookiejar import CookieJar
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 
-from scrapyjs.responsetypes import responsetypes
-from scrapyjs.cookies import jar_to_har, har_to_jar
-from scrapyjs.utils import scrapy_headers_to_unicode_dict
+from scrapy_splash.responsetypes import responsetypes
+from scrapy_splash.cookies import jar_to_har, har_to_jar
+from scrapy_splash.utils import scrapy_headers_to_unicode_dict
 
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class SplashCookiesMiddleware(object):
         For Splash JSON responses add all cookies from
         'cookies' in a response to the cookiejar.
         """
-        from scrapyjs import SplashJsonResponse
+        from scrapy_splash import SplashJsonResponse
         if not isinstance(response, SplashJsonResponse):
             return response
 
@@ -222,7 +222,7 @@ class SplashMiddleware(object):
         if splash_options.get('dont_process_response', False):
             return response
 
-        from scrapyjs import SplashResponse, SplashTextResponse, SplashJsonResponse
+        from scrapy_splash import SplashResponse, SplashTextResponse, SplashJsonResponse
         if not isinstance(response, (SplashResponse, SplashTextResponse)):
             # create a custom Response subclass based on response Content-Type
             # XXX: usually request is assigned to response only when all

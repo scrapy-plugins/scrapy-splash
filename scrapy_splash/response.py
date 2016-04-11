@@ -8,7 +8,7 @@ import re
 from scrapy.http import Response, TextResponse
 from scrapy import Selector
 
-from scrapyjs.utils import headers_to_scrapy
+from scrapy_splash.utils import headers_to_scrapy
 
 
 class _SplashResponseMixin(object):

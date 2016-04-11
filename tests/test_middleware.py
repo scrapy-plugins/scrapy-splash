@@ -10,9 +10,9 @@ from scrapy.utils.test import get_crawler
 from scrapy.http import Response, TextResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
-import scrapyjs
-from scrapyjs.utils import to_native_str
-from scrapyjs import (
+import scrapy_splash
+from scrapy_splash.utils import to_native_str
+from scrapy_splash import (
     SplashRequest,
     SplashMiddleware,
     SlotPolicy,
@@ -88,7 +88,7 @@ def test_splash_request():
                             body=b"<html><body>Hello</body></html>")
     response2 = mw.process_response(req2, response, None)
     response2 = cookie_mw.process_response(req2, response2, None)
-    assert isinstance(response2, scrapyjs.SplashTextResponse)
+    assert isinstance(response2, scrapy_splash.SplashTextResponse)
     assert response2 is not response
     assert response2.real_url == req2.url
     assert response2.url == req.url
@@ -99,7 +99,7 @@ def test_splash_request():
     # check .replace method
     response3 = response2.replace(status=404)
     assert response3.status == 404
-    assert isinstance(response3, scrapyjs.SplashTextResponse)
+    assert isinstance(response3, scrapy_splash.SplashTextResponse)
     for attr in ['url', 'real_url', 'headers', 'body']:
         assert getattr(response3, attr) == getattr(response2, attr)
 
@@ -178,7 +178,7 @@ def test_splash_request_parameters():
                             body=res_body.encode('utf8'))
     response2 = mw.process_response(req2, response, None)
     response2 = cookie_mw.process_response(req2, response2, None)
-    assert isinstance(response2, scrapyjs.SplashJsonResponse)
+    assert isinstance(response2, scrapy_splash.SplashJsonResponse)
     assert response2 is not response
     assert response2.real_url == req2.url
     assert response2.url == req.meta['splash']['args']['url']
@@ -223,7 +223,7 @@ def test_magic_response():
                         body=json.dumps(resp_data).encode('utf8'))
     resp2 = mw.process_response(req, resp, None)
     resp2 = cookie_mw.process_response(req, resp2, None)
-    assert isinstance(resp2, scrapyjs.SplashJsonResponse)
+    assert isinstance(resp2, scrapy_splash.SplashJsonResponse)
     assert resp2.data == resp_data
     assert resp2.body == b'<html><body>Hello 404</body></html>'
     assert resp2.text == '<html><body>Hello 404</body></html>'
@@ -272,7 +272,7 @@ def test_magic_response():
                         body=json.dumps(resp_data).encode('utf8'))
     resp2 = mw.process_response(req, resp, None)
     resp2 = cookie_mw.process_response(req, resp2, None)
-    assert isinstance(resp2, scrapyjs.SplashJsonResponse)
+    assert isinstance(resp2, scrapy_splash.SplashJsonResponse)
     assert resp2.data == resp_data
     cookies = [c for c in resp2.cookiejar]
     assert {c.name for c in cookies} == {'session', 'egg', 'bar', 'spam'}
@@ -410,7 +410,7 @@ def test_magic_response_caching(tmpdir):
     spider = scrapy.Spider(name='foo')
     crawler = _get_crawler({
         'HTTPCACHE_DIR': str(tmpdir.join('cache')),
-        'HTTPCACHE_STORAGE': 'scrapyjs.SplashAwareFSCacheStorage',
+        'HTTPCACHE_STORAGE': 'scrapy_splash.SplashAwareFSCacheStorage',
         'HTTPCACHE_ENABLED': True
     })
     cache_mw = HttpCacheMiddleware.from_crawler(crawler)
@@ -464,7 +464,7 @@ def test_magic_response_caching(tmpdir):
     resp3_1 = mw.process_response(req, resp2_1, spider)
     resp3_1 = cookie_mw.process_response(req, resp3_1, spider)
 
-    assert isinstance(resp3_1, scrapyjs.SplashJsonResponse)
+    assert isinstance(resp3_1, scrapy_splash.SplashJsonResponse)
     assert resp3_1.body == b"<html><body>Hello</body></html>"
     assert resp3_1.text == "<html><body>Hello</body></html>"
     assert resp3_1.css("body").extract_first() == "<body>Hello</body>"
@@ -548,7 +548,7 @@ def test_float_wait_arg():
 def test_slot_policy_single_slot():
     mw = _get_mw()
     meta = {'splash': {
-        'slot_policy': scrapyjs.SlotPolicy.SINGLE_SLOT
+        'slot_policy': scrapy_splash.SlotPolicy.SINGLE_SLOT
     }}
 
     req1 = scrapy.Request("http://example.com/path?key=value", meta=meta)
@@ -564,7 +564,7 @@ def test_slot_policy_single_slot():
 def test_slot_policy_per_domain():
     mw = _get_mw()
     meta = {'splash': {
-        'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN
+        'slot_policy': scrapy_splash.SlotPolicy.PER_DOMAIN
     }}
 
     req1 = scrapy.Request("http://example.com/path?key=value", meta=meta)
@@ -586,7 +586,7 @@ def test_slot_policy_per_domain():
 def test_slot_policy_scrapy_default():
     mw = _get_mw()
     req = scrapy.Request("http://example.com", meta = {'splash': {
-        'slot_policy': scrapyjs.SlotPolicy.SCRAPY_DEFAULT
+        'slot_policy': scrapy_splash.SlotPolicy.SCRAPY_DEFAULT
     }})
     req = mw.process_request(req, None)
     assert 'download_slot' not in req.meta

@@ -1,9 +1,9 @@
-=========================================================
-ScrapyJS - Scrapy & JavaScript integration through Splash
-=========================================================
+==============================================
+Scrapy & JavaScript integration through Splash
+==============================================
 
-.. image:: https://img.shields.io/pypi/v/scrapyjs.svg
-   :target: https://pypi.python.org/pypi/scrapyjs
+.. image:: https://img.shields.io/pypi/v/scrapy-splash.svg
+   :target: https://pypi.python.org/pypi/scrapy-splash
    :alt: PyPI Version
 
 .. image:: https://travis-ci.org/scrapy-plugins/scrapy-splash.svg?branch=master
@@ -23,11 +23,11 @@ The license is BSD 3-clause.
 Installation
 ============
 
-Install ScrapyJS using pip::
+Install scrapy-splash using pip::
 
-    $ pip install scrapyjs
+    $ pip install scrapy-splash
 
-ScrapyJS uses Splash_ HTTP API, so you also need a Splash instance.
+Scrapy-Splash uses Splash_ HTTP API, so you also need a Splash instance.
 Usually to install & run Splash, something like this is enough::
 
     $ docker run -p 8050:8050 scrapinghub/splash
@@ -50,8 +50,8 @@ Configuration
    priority::
 
       DOWNLOADER_MIDDLEWARES = {
-          'scrapyjs.SplashCookiesMiddleware': 723,
-          'scrapyjs.SplashMiddleware': 725,
+          'scrapy_splash.SplashCookiesMiddleware': 723,
+          'scrapy_splash.SplashMiddleware': 725,
           'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
       }
 
@@ -66,17 +66,17 @@ Configuration
 
 3. Set a custom ``DUPEFILTER_CLASS``::
 
-      DUPEFILTER_CLASS = 'scrapyjs.SplashAwareDupeFilter'
+      DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
 4. If you use Scrapy HTTP cache then a custom cache storage backend
-   is required. ScrapyJS provides a subclass of
+   is required. scrapy-splash provides a subclass of
    ``scrapy.contrib.httpcache.FilesystemCacheStorage``::
 
-      HTTPCACHE_STORAGE = 'scrapyjs.SplashAwareFSCacheStorage'
+      HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
    If you use other cache storage then it is necesary to subclass it and
    replace all ``scrapy.util.request.request_fingerprint`` calls with
-   ``scrapyjs.splash_request_fingerprint``.
+   ``scrapy_splash.splash_request_fingerprint``.
 
 .. note::
 
@@ -92,7 +92,7 @@ Requests
 --------
 
 The easiest way to render requests with Splash is to
-use ``scrapyjs.SplashRequest``::
+use ``scrapy_splash.SplashRequest``::
 
     yield SplashRequest(url, self.parse_result,
         args={
@@ -105,7 +105,7 @@ use ``scrapyjs.SplashRequest``::
         },
         endpoint='render.json', # optional; default is render.html
         splash_url='<url>',     # optional; overrides SPLASH_URL
-        slot_policy=scrapyjs.SlotPolicy.PER_DOMAIN,  # optional
+        slot_policy=scrapy_splash.SlotPolicy.PER_DOMAIN,  # optional
     )
 
 Alternatively, you can use regular scrapy.Request and
@@ -126,7 +126,7 @@ Alternatively, you can use regular scrapy.Request and
             # optional parameters
             'endpoint': 'render.json',  # optional; default is render.json
             'splash_url': '<url>',      # optional; overrides SPLASH_URL
-            'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN,
+            'slot_policy': scrapy_splash.SlotPolicy.PER_DOMAIN,
             'splash_headers': {},       # optional; a dict with headers sent to Splash
             'dont_process_response': True, # optional, default is False
             'dont_send_headers': True,  # optional, default is False
@@ -143,7 +143,7 @@ by default.
 it should be easier to use in most cases.
 
 * ``meta['splash']['args']`` contains arguments sent to Splash.
-  ScrapyJS adds some default keys/values to ``args``:
+  scrapy-splash adds some default keys/values to ``args``:
 
   * 'url' is set to request.url;
   * 'http_method' is set to 'POST' for POST requests;
@@ -187,15 +187,15 @@ it should be easier to use in most cases.
 
   Currently there are 3 policies available:
 
-  1. ``scrapyjs.SlotPolicy.PER_DOMAIN`` (default) - send Splash requests to
+  1. ``scrapy_splash.SlotPolicy.PER_DOMAIN`` (default) - send Splash requests to
      downloader slots based on URL being rendered. It is useful if you want
      to maintain per-domain politeness & concurrency settings.
 
-  2. ``scrapyjs.SlotPolicy.SINGLE_SLOT`` - send all Splash requests to
+  2. ``scrapy_splash.SlotPolicy.SINGLE_SLOT`` - send all Splash requests to
      a single downloader slot. It is useful if you want to throttle requests
      to Splash.
 
-  3. ``scrapyjs.SlotPolicy.SCRAPY_DEFAULT`` - don't do anything with slots.
+  3. ``scrapy_splash.SlotPolicy.SCRAPY_DEFAULT`` - don't do anything with slots.
      It is similar to ``SINGLE_SLOT`` policy, but can be different if you access
      other services on the same address as Splash.
 
@@ -204,7 +204,7 @@ it should be easier to use in most cases.
   subclass. By default for Splash requests one of SplashResponse,
   SplashTextResponse or SplashJsonResponse is passed to the callback.
 
-* ``meta['splash']['dont_send_headers']``: by default ScrapyJS passes
+* ``meta['splash']['dont_send_headers']``: by default scrapy-splash passes
   request headers to Splash in 'headers' JSON POST field. For all render.xxx
   endpoints it means Scrapy header options are respected by default
   (http://splash.readthedocs.org/en/stable/api.html#arg-headers). In Lua
@@ -243,7 +243,7 @@ it should be easier to use in most cases.
 Responses
 ---------
 
-ScrapyJS returns Response subclasses for Splash requests:
+scrapy-splash returns Response subclasses for Splash requests:
 
 * SplashResponse is returned for binary Splash responses - e.g. for
   /render.png responses;
@@ -302,13 +302,13 @@ In order to support sessions the following is required:
 For (2) and (3) Splash provides ``spalsh:get_cookies()`` and
 ``splash:init_cookies()`` methods which can be used in Splash Lua scripts.
 
-ScrapyJS provides helpers for (1) and (4): to send current cookies
+scrapy-splash provides helpers for (1) and (4): to send current cookies
 in 'cookies' field and merge cookies back from 'cookies' response field
 set ``request.meta['splash']['session_id']`` to the session
 identifier. If you only want a single session use the same ``session_id`` for
 all request; any value like '1' or 'foo' is fine.
 
-For ScrapyJS session handling to work you must use ``/execute`` endpoint
+For scrapy-splash session handling to work you must use ``/execute`` endpoint
 and a Lua script which accepts 'cookies' argument and returns 'cookies'
 field in the result::
 
@@ -341,7 +341,7 @@ Examples
 Get HTML contents::
 
     import scrapy
-    from scrapyjs import SplashRequest
+    from scrapy_splash import SplashRequest
 
     class MySpider(scrapy.Spider):
         start_urls = ["http://example.com", "http://example.com/foo"]
@@ -360,7 +360,7 @@ Get HTML contents and a screenshot::
     import json
     import base64
     import scrapy
-    from scrapyjs import SplashRequest
+    from scrapy_splash import SplashRequest
 
     class MySpider(scrapy.Spider):
 
@@ -392,7 +392,7 @@ Run a simple `Splash Lua Script`_::
 
     import json
     import base64
-    from scrapyjs import SplashRequest
+    from scrapy_splash import SplashRequest
 
 
     class MySpider(scrapy.Spider):
@@ -419,7 +419,7 @@ Note how are arguments passed to the script::
 
     import json
     import base64
-    from scrapyjs import SplashRequest
+    from scrapy_splash import SplashRequest
 
     script = """
     -- Arguments:
@@ -478,7 +478,7 @@ Use a Lua script to get an HTML response with cookies, headers, body
 and method set to correct values::
 
     import scrapy
-    from scrapyjs import SplashRequest
+    from scrapy_splash import SplashRequest
 
     script = """
     function last_response_headers(splash)
@@ -543,7 +543,7 @@ to ``splash_headers`` if HttpAuthMiddleware doesn't fit for some reason.
 Why not use the Splash HTTP API directly?
 =========================================
 
-The obvious alternative to ScrapyJS would be to send requests directly
+The obvious alternative to scrapy-splash would be to send requests directly
 to the Splash `HTTP API`_. Take a look at the example below and make
 sure to read the observations after it::
 
@@ -602,7 +602,8 @@ aware of:
 7. Cookie handling is tedious to implement, and you can't use Scrapy
    built-in Cookie middleware to handle cookies when working with Splash.
 
-ScrapyJS utlities allow to handle such edge cases and reduce the boilerplate.
+scrapy-splash utlities allow to handle such edge cases and reduce
+the boilerplate.
 
 .. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
 .. _timeout: http://splash.readthedocs.org/en/latest/api.html#arg-timeout

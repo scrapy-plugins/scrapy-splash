@@ -2,8 +2,8 @@
 from setuptools import setup
 
 setup(
-    name='scrapyjs',
     version='0.2',
+    name='scrapy-splash',
     url='https://github.com/scrapy-plugins/scrapy-splash',
     description='JavaScript support for Scrapy using Splash',
     long_description=open('README.rst').read() + "\n\n" + open("CHANGES.rst").read(),
@@ -11,7 +11,7 @@ setup(
     maintainer='Mikhail Korobov',
     maintainer_email='kmike84@gmail.com',
     license='BSD',
-    packages=['scrapyjs'],
+    packages=['scrapy-splash'],
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',

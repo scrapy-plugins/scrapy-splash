@@ -1,4 +1,4 @@
-from scrapyjs import SplashRequest
+from scrapy_splash import SplashRequest
 
 
 def test_meta_None():

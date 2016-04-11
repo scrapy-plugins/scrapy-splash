@@ -4,8 +4,8 @@ import pytest
 import scrapy
 from scrapy.dupefilters import request_fingerprint
 
-from scrapyjs.dupefilter import splash_request_fingerprint
-from scrapyjs.utils import dict_hash
+from scrapy_splash.dupefilter import splash_request_fingerprint
+from scrapy_splash.utils import dict_hash
 
 
 def test_dict_hash():
