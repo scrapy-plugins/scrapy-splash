@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 from scrapy.http import Headers
-from scrapyjs.utils import headers_to_scrapy
+from scrapy_splash.utils import headers_to_scrapy
 
 
 def test_headers_to_scrapy():

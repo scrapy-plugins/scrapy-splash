@@ -1,11 +1,11 @@
-from scrapyjs.cookies import har_to_cookie, cookie_to_har
+from scrapy_splash.cookies import har_to_cookie, cookie_to_har
 
 
-# See also doctests in scrapyjs.cookies module
+# See also doctests in scrapy_splash.cookies module
 
 
 def test_cookie_to_har():
-    har_cookie =  {
+    har_cookie = {
         "name": "TestCookie",
         "value": "Cookie Value",
         "path": "/foo",

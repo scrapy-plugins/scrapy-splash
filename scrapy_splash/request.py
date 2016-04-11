@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 import scrapy
 
-from scrapyjs import SlotPolicy
-from scrapyjs.utils import to_native_str
+from scrapy_splash import SlotPolicy
+from scrapy_splash.utils import to_native_str
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
