@@ -163,7 +163,7 @@ it should be easier to use in most cases.
   ``http_method`` and ``body`` arguments in your Lua script manually.
 
 * ``meta['splash']['endpoint']`` is the Splash endpoint to use.
-   In case of SplashRequest
+  In case of SplashRequest
   `render.html <http://splash.readthedocs.org/en/latest/api.html#render-html>`_
   is used by default. If you're using raw scrapy.Request then
   `render.json <http://splash.readthedocs.org/en/latest/api.html#render-json>`_
@@ -234,6 +234,11 @@ it should be easier to use in most cases.
     response.status is also set to HTTP error code.
 
   This option is set to True by default if you use SplashRequest.
+  ``render.json`` and ``execute`` endpoints may not have all the necessary
+  keys/values in the response.
+  For non-JSON endpoints, only url is filled, regardless of the
+  ``magic_response`` setting.
+
 
 Responses
 ---------
@@ -469,8 +474,8 @@ Note how are arguments passed to the script::
             # ...
 
 
-Use a Lua script to get an HTML response with cookies and headers set to
-correct values::
+Use a Lua script to get an HTML response with cookies, headers, body
+and method set to correct values::
 
     import scrapy
     from scrapyjs import SplashRequest
@@ -484,7 +489,12 @@ correct values::
 
     function main(splash)
       splash:init_cookies(splash.args.cookies)
-      assert(splash:go{splash.args.url, headers=splash.args.headers})
+      assert(splash:go{
+        splash.args.url,
+        headers=splash.args.headers,
+        http_method=splash.args.http_method,
+        body=splash.args.body,
+        })
       assert(splash:wait(0.5))
 
       return {
