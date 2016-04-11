@@ -472,8 +472,8 @@ Note how are arguments passed to the script::
             # ...
 
 
-Use a Lua script to get an HTML response with cookies and headers set to
-correct values::
+Use a Lua script to get an HTML response with cookies, headers, body
+and method set to correct values::
 
     import scrapy
     from scrapyjs import SplashRequest
@@ -487,7 +487,12 @@ correct values::
 
     function main(splash)
       splash:init_cookies(splash.args.cookies)
-      assert(splash:go{splash.args.url, headers=splash.args.headers})
+      assert(splash:go{
+        splash.args.url,
+        headers=splash.args.headers,
+        http_method=splash.args.http_method,
+        body=splash.args.body,
+        })
       assert(splash:wait(0.5))
 
       return {
