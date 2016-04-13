@@ -45,7 +45,7 @@ class _SplashResponseMixin(object):
     def _splash_options(self, request=None):
         if request is None:
             request = self.request
-        return request.meta.get("_splash_processed", {})
+        return request.meta.get("splash", {})
 
     def _splash_args(self, request=None):
         return self._splash_options(request).get('args', {})

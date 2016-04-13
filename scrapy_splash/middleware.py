@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 import json
 import logging
+import warnings
 from collections import defaultdict
 
 from six.moves.urllib.parse import urljoin
@@ -47,7 +48,7 @@ class SplashCookiesMiddleware(object):
         if 'splash' not in request.meta:
             return
 
-        if '_splash_processed' in request.meta:
+        if request.meta.get('_splash_processed'):
             return
 
         splash_options = request.meta['splash']
@@ -81,6 +82,11 @@ class SplashCookiesMiddleware(object):
         if 'splash' not in request.meta:
             return response
 
+        if not request.meta.get('_splash_processed'):
+            warnings.warn("SplashCookiesMiddleware must have lower priority "
+                          "than SplashMiddleware")
+            return response
+
         splash_options = request.meta['splash']
         session_id = splash_options.get('new_session_id',
                                         splash_options.get('session_id'))
@@ -88,8 +94,7 @@ class SplashCookiesMiddleware(object):
             return response
 
         jar = self.jars[session_id]
-        request_cookies = request.meta['_splash_processed']['args']\
-                          .get('cookies', [])
+        request_cookies = splash_options['args'].get('cookies', [])
         har_to_jar(jar, response.data['cookies'], request_cookies)
         response.cookiejar = jar
         return response
@@ -148,11 +153,10 @@ class SplashMiddleware(object):
             return
 
         splash_options = request.meta['splash']
-        meta = request.meta
-        meta['_splash_processed'] = splash_options
+        request.meta['_splash_processed'] = True
 
         slot_policy = splash_options.get('slot_policy', self.slot_policy)
-        self._set_download_slot(request, meta, slot_policy)
+        self._set_download_slot(request, request.meta, slot_policy)
 
         args = splash_options.setdefault('args', {})
         args.setdefault('url', request.url)
@@ -188,10 +192,10 @@ class SplashMiddleware(object):
             timeout_expected = timeout_requested + self.splash_extra_timeout
 
             # no timeout means infinite timeout
-            timeout_current = meta.get('download_timeout', 1e6)
+            timeout_current = request.meta.get('download_timeout', 1e6)
 
             if timeout_expected > timeout_current:
-                meta['download_timeout'] = timeout_expected
+                request.meta['download_timeout'] = timeout_expected
 
         endpoint = splash_options.setdefault('endpoint', self.default_endpoint)
         splash_base_url = splash_options.get('splash_url', self.splash_base_url)
@@ -209,7 +213,10 @@ class SplashMiddleware(object):
         return req_rep
 
     def process_response(self, request, response, spider):
-        splash_options = request.meta.get("_splash_processed")
+        if not request.meta.get("_splash_processed"):
+            return response
+
+        splash_options = request.meta['splash']
         if not splash_options:
             return response
 

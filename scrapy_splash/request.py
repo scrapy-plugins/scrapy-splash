@@ -73,7 +73,7 @@ class SplashRequest(scrapy.Request):
 
     @property
     def _processed(self):
-        return '_splash_processed' in self.meta
+        return self.meta.get('_splash_processed')
 
     @property
     def _splash_args(self):
