@@ -83,8 +83,7 @@ class SplashCookiesMiddleware(object):
             return response
 
         if not request.meta.get('_splash_processed'):
-            warnings.warn("SplashCookiesMiddleware must have lower priority "
-                          "than SplashMiddleware")
+            warnings.warn("SplashCookiesMiddleware requires SplashMiddleware")
             return response
 
         splash_options = request.meta['splash']
