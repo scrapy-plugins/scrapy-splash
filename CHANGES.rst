@@ -1,6 +1,17 @@
 Changes
 =======
 
+0.4 (2016-04-14)
+----------------
+
+* SplashFormRequest class is added; it is a variant of FormRequest which uses
+  Splash;
+* Splash parameters are no longer stored in request.meta twice; this change
+  should decrease disk queues data size;
+* SplashMiddleware now increases request priority when rescheduling the request;
+  this should decrease disk queue data size and help with stale cookie
+  problems.
+
 0.3 (2016-04-11)
 ----------------
 
