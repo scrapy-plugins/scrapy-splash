@@ -247,6 +247,9 @@ and also ``formdata``, like ``FormRequest`` from scrapy::
     >>> SplashFormRequest('http://example.com', formdata={'foo': 'bar'})
     <POST http://example.com>
 
+``SplashFormRequest.from_response`` is also supported, and works as described
+in `scrapy documentation <http://scrapy.readthedocs.org/en/latest/topics/request-response.html#scrapy.http.FormRequest.from_response>`_.
+
 Responses
 ---------
 
