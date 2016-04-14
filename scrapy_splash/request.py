@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import scrapy
+from scrapy.http import FormRequest
 
 from scrapy_splash import SlotPolicy
 from scrapy_splash.utils import to_native_str
@@ -93,3 +94,24 @@ class SplashRequest(scrapy.Request):
         return "<%s %s via %s>" % (self._original_method, self._original_url, self.url)
 
     __repr__ = __str__
+
+
+class SplashFormRequest(SplashRequest, FormRequest):
+    """
+    Use SplashFormRequest if you want to make a FormRequest via splash.
+    Accepts the same arguments as SplashRequest, and also formdata,
+    like FormRequest. First, FormRequest is initialized, and then it's
+    url, method and body are passed to SplashRequest.
+    Note that FormRequest calls escape_ajax on url (via Request._set_url).
+    """
+    def __init__(self, url=None, callback=None, method=None, formdata=None,
+                 body=None, **kwargs):
+        # First init FormRequest to get url, body and method
+        if formdata:
+            FormRequest.__init__(
+                self, url=url, method=method, formdata=formdata)
+            url, method, body = self.url, self.method, self.body
+        # Then pass all other kwargs to SplashRequest
+        SplashRequest.__init__(
+            self, url=url, callback=callback, method=method, body=body,
+            **kwargs)
