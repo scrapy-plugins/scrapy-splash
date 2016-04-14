@@ -134,8 +134,9 @@ Alternatively, you can use regular scrapy.Request and
         }
     })
 
-Use ``request.meta['splash']`` API in middlewares or when other scrapy.Request
-subclasses (e.g. scrapy.FormRequest) are used. For example, ``meta['splash']``
+Use ``request.meta['splash']`` API in middlewares or when scrapy.Request
+subclasses are used (there is also ``SplashFormRequest`` described below).
+For example, ``meta['splash']``
 allows to create a middleware which enables Splash for all outgoing requests
 by default.
 
@@ -239,6 +240,12 @@ it should be easier to use in most cases.
   For non-JSON endpoints, only url is filled, regardless of the
   ``magic_response`` setting.
 
+Use ``scrapy_splash.SplashFormRequest`` if you want to make a ``FormRequest``
+via splash. It accepts the same arguments as ``SplashRequest``,
+and also ``formdata``, like ``FormRequest`` from scrapy::
+
+    >>> SplashFormRequest('http://example.com', formdata={'foo': 'bar'})
+    <POST http://example.com>
 
 Responses
 ---------
