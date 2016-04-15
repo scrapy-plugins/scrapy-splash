@@ -64,11 +64,24 @@ Configuration
    advanced response processing; see https://github.com/scrapy/scrapy/issues/1895
    for details.
 
-3. Set a custom ``DUPEFILTER_CLASS``::
+3. Enable ``SplashDeduplicateArgsMiddleware`` by adding it to
+   ``SPIDER_MIDDLEWARES`` in your ``settings.py``::
+
+      SPIDER_MIDDLEWARES = {
+          'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
+      }
+
+   This middleware is needed to support ``cache_args`` feature; it allows
+   to save disk space by not storing duplicate Splash arguments multiple
+   times in a disk request queue. If Splash 2.1+ is used the middleware
+   also allows to save network traffic by not sending these duplicate
+   arguments to Splash server multiple times.
+
+4. Set a custom ``DUPEFILTER_CLASS``::
 
       DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
-4. If you use Scrapy HTTP cache then a custom cache storage backend
+5. If you use Scrapy HTTP cache then a custom cache storage backend
    is required. scrapy-splash provides a subclass of
    ``scrapy.contrib.httpcache.FilesystemCacheStorage``::
 
@@ -80,7 +93,7 @@ Configuration
 
 .. note::
 
-    Steps (3) and (4) are necessary because Scrapy doesn't provide a way
+    Steps (4) and (5) are necessary because Scrapy doesn't provide a way
     to override request fingerprints calculation algorithm globally; this
     could change in future.
 
@@ -164,6 +177,14 @@ to set ``meta['splash']['args']`` use ``SplashRequest(..., args=myargs)``.
   endpoint and want to support POST requests you have to handle
   ``http_method`` and ``body`` arguments in your Lua script manually.
 
+* ``meta['splash']['cache_args']`` is a list of argument names to cache
+  on Splash side. These arguments are sent to Splash only once, then cached
+  values are used; it allows to save network traffic and decreases request
+  queue disk memory usage. Use ``cache_args`` only for large arguments
+  which don't change with each request; ``lua_source`` is a good candidate
+  (if you don't use string formatting to build it). Splash 2.1+ is required
+  for this feature to work.
+
 * ``meta['splash']['endpoint']`` is the Splash endpoint to use.
   In case of SplashRequest
   `render.html <http://splash.readthedocs.org/en/latest/api.html#render-html>`_
@@ -240,6 +261,7 @@ to set ``meta['splash']['args']`` use ``SplashRequest(..., args=myargs)``.
   keys/values in the response.
   For non-JSON endpoints, only url is filled, regardless of the
   ``magic_response`` setting.
+
 
 Use ``scrapy_splash.SplashFormRequest`` if you want to make a ``FormRequest``
 via splash. It accepts the same arguments as ``SplashRequest``,
@@ -486,7 +508,8 @@ Note how are arguments passed to the script::
 
 
 Use a Lua script to get an HTML response with cookies, headers, body
-and method set to correct values::
+and method set to correct values; ``lua_script`` argument value is cached
+on Splash server and is not sent with each request (it requires Splash 2.1+)::
 
     import scrapy
     from scrapy_splash import SplashRequest
@@ -522,6 +545,7 @@ and method set to correct values::
         # ...
             yield SplashRequest(url, self.parse_result,
                 endpoint='execute',
+                cache_args=['lua_source'],
                 args={'lua_source': script},
                 headers={'X-My-Header': 'value'},
             )

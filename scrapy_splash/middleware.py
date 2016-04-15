@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import json
+import hashlib
 import logging
 import warnings
 from collections import defaultdict
@@ -8,8 +9,10 @@ from collections import defaultdict
 from six.moves.urllib.parse import urljoin
 from six.moves.http_cookiejar import CookieJar
 
+import scrapy
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
+from scrapy import signals
 
 from scrapy_splash.responsetypes import responsetypes
 from scrapy_splash.cookies import jar_to_har, har_to_jar
@@ -106,10 +109,76 @@ class SplashCookiesMiddleware(object):
         return request.cookies or []
 
 
+class SplashDeduplicateArgsMiddleware(object):
+    """
+    Spider middleware which allows not to store duplicate Splash argument
+    values in request queue. It works together with SplashMiddleware downloader
+    middleware.
+    """
+    state_key = '_saved_values'
+
+    def process_spider_output(self, response, result, spider):
+        for el in result:
+            if isinstance(el, scrapy.Request):
+                yield self._process_request(el, spider)
+            else:
+                yield el
+
+    def process_start_requests(self, start_requests, spider):
+        if not hasattr(spider, 'state'):
+            spider.state = {}
+        spider.state.setdefault(self.state_key, {})  # fingerprint => value dict
+
+        for req in start_requests:
+            yield self._process_request(req, spider)
+
+    @classmethod
+    def get_value_fingerprint(cls, value):
+        v = json.dumps(value, sort_keys=True, ensure_ascii=False).encode('utf8')
+        return hashlib.sha1(v).hexdigest()
+
+    def _process_request(self, request, spider):
+        """
+        Replace requested meta['splash']['args'] values with their fingerprints.
+        This allows to store values only once in request queue, which helps
+        with disk queue size.
+
+        Downloader middleware should restore the values from fingerprints.
+        """
+        if 'splash' not in request.meta:
+            return request
+
+        if '_replaced_args' in request.meta['splash']:
+            # don't process re-scheduled requests
+            # XXX: does it work as expected?
+            warnings.warn("Unexpected request.meta['splash']['_replaced_args']")
+            return request
+
+        request.meta['splash']['_replaced_args'] = []
+        cache_args = request.meta['splash'].get('cache_args', [])
+        args = request.meta['splash'].setdefault('args', {})
+
+        for name in cache_args:
+            if name not in args:
+                continue
+            value = args[name]
+            fp = self.get_value_fingerprint(value)
+            args[name] = fp
+            spider.state[self.state_key][fp] = value
+            request.meta['splash']['_replaced_args'].append(name)
+
+        return request
+
+
 class SplashMiddleware(object):
     """
-    Scrapy downloader middleware that passes requests through Splash
-    when 'splash' Request.meta key is set.
+    Scrapy downloader and spider middleware that passes requests
+    through Splash when 'splash' Request.meta key is set.
+
+    This middleware also works together with SplashDeduplicateArgsMiddleware
+    spider middleware to allow not to store duplicate Splash argument values
+    in request queue and not to send them multiple times to Splash
+    (the latter requires Splash 2.1+).
     """
     default_splash_url = 'http://127.0.0.1:8050'
     default_endpoint = "render.json"
@@ -122,6 +191,7 @@ class SplashMiddleware(object):
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
         self.log_400 = log_400
+        self.crawler.signals.connect(self.spider_opened, signals.spider_opened)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -134,6 +204,10 @@ class SplashMiddleware(object):
             raise NotConfigured("Incorrect slot policy: %r" % slot_policy)
 
         return cls(crawler, splash_base_url, slot_policy, log_400)
+
+    def spider_opened(self, spider):
+        if not hasattr(spider, 'state'):
+            spider.state = {}
 
     def process_request(self, request, spider):
         if request.method not in {'GET', 'POST'}:
@@ -159,6 +233,15 @@ class SplashMiddleware(object):
         self._set_download_slot(request, request.meta, slot_policy)
 
         args = splash_options.setdefault('args', {})
+
+        if '_replaced_args' in splash_options:
+            # restore arguments before sending request to the downloader
+            _state = spider.state[SplashDeduplicateArgsMiddleware.state_key]
+            for name in splash_options['_replaced_args']:
+                fp = args[name]
+                args[name] = _state[fp]
+            del splash_options['_replaced_args']  # ??
+
         args.setdefault('url', request.url)
         if request.method == 'POST':
             args.setdefault('http_method', request.method)

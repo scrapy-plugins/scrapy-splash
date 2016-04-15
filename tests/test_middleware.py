@@ -16,7 +16,8 @@ from scrapy_splash import (
     SplashRequest,
     SplashMiddleware,
     SlotPolicy,
-    SplashCookiesMiddleware
+    SplashCookiesMiddleware,
+    SplashDeduplicateArgsMiddleware,
 )
 
 
@@ -470,6 +471,30 @@ def test_magic_response_caching(tmpdir):
     assert resp3_1.css("body").extract_first() == "<body>Hello</body>"
     assert resp3_1.data['render_time'] == 0.5
     assert resp3_1.headers[b'Content-Type'] == b'text/html; charset=utf-8'
+
+
+def test_cache_args():
+    spider = scrapy.Spider(name='foo')
+    mw = _get_mw()
+    dedupe_mw = SplashDeduplicateArgsMiddleware()
+
+    lua_source = 'function main(splash) end'
+    req = SplashRequest('http://example.com/foo',
+                        endpoint='execute',
+                        args={'lua_source': lua_source},
+                        cache_args=['lua_source'])
+
+    assert req.meta['splash']['args']['lua_source'] == lua_source
+
+    # process request before putting it to the scheduler
+    req, = list(dedupe_mw.process_start_requests([req], spider))
+    # ----> scheduler
+    assert req.meta['splash']['args']['lua_source'] != lua_source
+    assert list(spider.state[SplashDeduplicateArgsMiddleware.state_key].values()) == [lua_source]
+    # <---- scheduler
+    # process request before sending it to the downloader
+    req = mw.process_request(req, spider) or req
+    assert req.meta['splash']['args']['lua_source'] == lua_source
 
 
 def test_splash_request_no_url():
