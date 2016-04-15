@@ -115,7 +115,7 @@ class SplashMiddleware(object):
     default_endpoint = "render.json"
     splash_extra_timeout = 5.0
     default_policy = SlotPolicy.PER_DOMAIN
-    priority_adjust = +5
+    rescheduling_priority_adjust = +20
 
     def __init__(self, crawler, splash_base_url, slot_policy, log_400):
         self.crawler = crawler
@@ -208,7 +208,7 @@ class SplashMiddleware(object):
             method='POST',
             body=body,
             headers=headers,
-            priority=request.priority + self.priority_adjust
+            priority=request.priority + self.rescheduling_priority_adjust
         )
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return new_request
