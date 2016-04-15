@@ -490,7 +490,9 @@ def test_cache_args():
     req, = list(dedupe_mw.process_start_requests([req], spider))
     # ----> scheduler
     assert req.meta['splash']['args']['lua_source'] != lua_source
-    assert list(spider.state[SplashDeduplicateArgsMiddleware.state_key].values()) == [lua_source]
+    state = spider.state[SplashDeduplicateArgsMiddleware.state_key]
+    assert list(state.values()) == [lua_source]
+    assert list(state.keys()) == [req.meta['splash']['args']['lua_source']]
     # <---- scheduler
     # process request before sending it to the downloader
     req = mw.process_request(req, spider) or req
