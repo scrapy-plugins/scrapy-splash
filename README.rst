@@ -136,12 +136,13 @@ Alternatively, you can use regular scrapy.Request and
 
 Use ``request.meta['splash']`` API in middlewares or when scrapy.Request
 subclasses are used (there is also ``SplashFormRequest`` described below).
-For example, ``meta['splash']``
-allows to create a middleware which enables Splash for all outgoing requests
-by default.
+For example, ``meta['splash']`` allows to create a middleware which enables
+Splash for all outgoing requests by default.
 
 ``SplashRequest`` is a convenient utility to fill ``request.meta['splash']``;
-it should be easier to use in most cases.
+it should be easier to use in most cases. For each ``request.meta['splash']``
+key there is a corresponding ``SplashRequest`` keyword argument: for example,
+to set ``meta['splash']['args']`` use ``SplashRequest(..., args=myargs)``.
 
 * ``meta['splash']['args']`` contains arguments sent to Splash.
   scrapy-splash adds some default keys/values to ``args``:
