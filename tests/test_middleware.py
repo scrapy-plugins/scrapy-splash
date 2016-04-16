@@ -476,8 +476,11 @@ def test_magic_response_caching(tmpdir):
 def test_cache_args():
     spider = scrapy.Spider(name='foo')
     mw = _get_mw()
+    mw.crawler.spider = spider
+    mw.spider_opened(spider)
     dedupe_mw = SplashDeduplicateArgsMiddleware()
 
+    # Send first request - it should use save_args:
     lua_source = 'function main(splash) end'
     req = SplashRequest('http://example.com/foo',
                         endpoint='execute',
@@ -485,18 +488,45 @@ def test_cache_args():
                         cache_args=['lua_source'])
 
     assert req.meta['splash']['args']['lua_source'] == lua_source
-
-    # process request before putting it to the scheduler
+    # <---- spider
     req, = list(dedupe_mw.process_start_requests([req], spider))
     # ----> scheduler
     assert req.meta['splash']['args']['lua_source'] != lua_source
-    state = spider.state[SplashDeduplicateArgsMiddleware.state_key]
-    assert list(state.values()) == [lua_source]
-    assert list(state.keys()) == [req.meta['splash']['args']['lua_source']]
+    assert list(mw._argument_values.values()) == [lua_source]
+    assert list(mw._argument_values.keys()) == [req.meta['splash']['args']['lua_source']]
     # <---- scheduler
     # process request before sending it to the downloader
     req = mw.process_request(req, spider) or req
+    # -----> downloader
     assert req.meta['splash']['args']['lua_source'] == lua_source
+    assert req.meta['splash']['args']['save_args'] == ['lua_source']
+    assert not req.meta['splash']['args']['load_args']
+    # <---- downloader
+    resp_body = b'{}'
+    resp = TextResponse("http://example.com",
+                        headers={
+                            b'Content-Type': b'application/json',
+                            b'X-Splash-Saved-Arguments': b'lua_source=ba001160ef96fe2a3f938fea9e6762e204a562b3'
+                        },
+                        body=resp_body)
+    resp = mw.process_response(req, resp, None)
+
+    # Send second request - it should use load_args
+    req2 = SplashRequest('http://example.com/bar',
+                        endpoint='execute',
+                        args={'lua_source': lua_source},
+                        cache_args=['lua_source'])
+    req2, item = list(dedupe_mw.process_spider_output(resp, [req2, {'key': 'value'}], spider))
+    assert item == {'key': 'value'}
+    # ----> scheduler
+    assert req2.meta['splash']['args']['lua_source'] != lua_source
+    # <---- scheduler
+    # process request before sending it to the downloader
+    req2 = mw.process_request(req2, spider) or req2
+    # -----> downloader
+    assert req2.meta['splash']['args']['load_args'] == {"lua_source": "ba001160ef96fe2a3f938fea9e6762e204a562b3"}
+    assert not req2.meta['splash']['args']['lua_source']
+    assert not req2.meta['splash']['args']['save_args']
 
 
 def test_splash_request_no_url():

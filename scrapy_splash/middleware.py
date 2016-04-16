@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import json
-import hashlib
 import logging
 import warnings
 from collections import defaultdict
@@ -16,7 +15,11 @@ from scrapy import signals
 
 from scrapy_splash.responsetypes import responsetypes
 from scrapy_splash.cookies import jar_to_har, har_to_jar
-from scrapy_splash.utils import scrapy_headers_to_unicode_dict
+from scrapy_splash.utils import (
+    scrapy_headers_to_unicode_dict,
+    json_based_hash,
+    parse_x_splash_saved_arguments_header,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -115,7 +118,7 @@ class SplashDeduplicateArgsMiddleware(object):
     values in request queue. It works together with SplashMiddleware downloader
     middleware.
     """
-    state_key = '_saved_values'
+    state_key = '_splash_local_values'
 
     def process_spider_output(self, response, result, spider):
         for el in result:
@@ -131,11 +134,6 @@ class SplashDeduplicateArgsMiddleware(object):
 
         for req in start_requests:
             yield self._process_request(req, spider)
-
-    @classmethod
-    def get_value_fingerprint(cls, value):
-        v = json.dumps(value, sort_keys=True, ensure_ascii=False).encode('utf8')
-        return hashlib.sha1(v).hexdigest()
 
     def _process_request(self, request, spider):
         """
@@ -162,7 +160,7 @@ class SplashDeduplicateArgsMiddleware(object):
             if name not in args:
                 continue
             value = args[name]
-            fp = self.get_value_fingerprint(value)
+            fp = json_based_hash(value)
             args[name] = fp
             spider.state[self.state_key][fp] = value
             request.meta['splash']['_replaced_args'].append(name)
@@ -185,6 +183,7 @@ class SplashMiddleware(object):
     splash_extra_timeout = 5.0
     default_policy = SlotPolicy.PER_DOMAIN
     rescheduling_priority_adjust = +20
+    state_key = '_splash_remote_keys'
 
     def __init__(self, crawler, splash_base_url, slot_policy, log_400):
         self.crawler = crawler
@@ -208,6 +207,17 @@ class SplashMiddleware(object):
     def spider_opened(self, spider):
         if not hasattr(spider, 'state'):
             spider.state = {}
+
+        # fingerprint => key returned by splash
+        spider.state.setdefault(self.state_key, {})
+
+    @property
+    def _argument_values(self):
+        return self.crawler.spider.state[SplashDeduplicateArgsMiddleware.state_key]
+
+    @property
+    def _remote_keys(self):
+        return self.crawler.spider.state[self.state_key]
 
     def process_request(self, request, spider):
         if request.method not in {'GET', 'POST'}:
@@ -236,10 +246,30 @@ class SplashMiddleware(object):
 
         if '_replaced_args' in splash_options:
             # restore arguments before sending request to the downloader
-            _state = spider.state[SplashDeduplicateArgsMiddleware.state_key]
+            load_args = {}
+            save_args = []
+            arg_fingerprints = {}
             for name in splash_options['_replaced_args']:
                 fp = args[name]
-                args[name] = _state[fp]
+                value = self._argument_values[fp]
+
+                # Use remote Splash argument cache: if Splash key
+                # for a value is known then don't send the value to Splash;
+                # if it is unknown then try to save the value on server using
+                # ``save_args``.
+                if fp in self._remote_keys:
+                    load_args[name] = self._remote_keys[fp]
+                    value = ""
+                else:
+                    save_args.append(name)
+                    arg_fingerprints[name] = fp
+
+                args[name] = value
+
+            args['load_args'] = load_args
+            args['save_args'] = save_args
+            splash_options['_arg_fingerprints'] = arg_fingerprints
+
             del splash_options['_replaced_args']  # ??
 
         args.setdefault('url', request.url)
@@ -310,10 +340,20 @@ class SplashMiddleware(object):
             'splash/%s/response_count/%s' % (endpoint, response.status)
         )
 
+        # handle save_args/load_args
+        saved_args = response.headers.get(b'X-Splash-Saved-Arguments')
+        if saved_args:
+            saved_args = parse_x_splash_saved_arguments_header(saved_args)
+            arg_fingerprints = splash_options['_arg_fingerprints']
+            for name, key in saved_args.items():
+                fp = arg_fingerprints[name]
+                self._remote_keys[fp] = key
+
         if splash_options.get('dont_process_response', False):
             return response
 
-        from scrapy_splash import SplashResponse, SplashTextResponse, SplashJsonResponse
+        from scrapy_splash import (SplashResponse, SplashTextResponse,
+                                   SplashJsonResponse)
         if not isinstance(response, (SplashResponse, SplashTextResponse)):
             # create a custom Response subclass based on response Content-Type
             # XXX: usually request is assigned to response only when all
@@ -322,8 +362,8 @@ class SplashMiddleware(object):
             respcls = responsetypes.from_args(headers=response.headers)
             response = response.replace(cls=respcls, request=request)
 
-        if self.log_400:
-            if response.status == 400 and isinstance(response, SplashJsonResponse):
+        if self.log_400 and response.status == 400:
+            if isinstance(response, SplashJsonResponse):
                 logger.warning(
                     "Bad request to Splash: %s" % response.data,
                     {'request': request},
