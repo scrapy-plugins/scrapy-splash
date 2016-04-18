@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
+import copy
 import json
 import logging
 import warnings
@@ -160,7 +162,7 @@ class SplashDeduplicateArgsMiddleware(object):
             if name not in args:
                 continue
             value = args[name]
-            fp = json_based_hash(value)
+            fp = 'LOCAL+' + json_based_hash(value)
             args[name] = fp
             spider.state[self.state_key][fp] = value
             request.meta['splash']['_replaced_args'].append(name)
@@ -182,7 +184,8 @@ class SplashMiddleware(object):
     default_endpoint = "render.json"
     splash_extra_timeout = 5.0
     default_policy = SlotPolicy.PER_DOMAIN
-    rescheduling_priority_adjust = +20
+    rescheduling_priority_adjust = +100
+    retry_498_priority_adjust = +50
     state_key = '_splash_remote_keys'
 
     def __init__(self, crawler, splash_base_url, slot_policy, log_400):
@@ -208,7 +211,7 @@ class SplashMiddleware(object):
         if not hasattr(spider, 'state'):
             spider.state = {}
 
-        # fingerprint => key returned by splash
+        # local fingerprint => key returned by splash
         spider.state.setdefault(self.state_key, {})
 
     @property
@@ -248,27 +251,27 @@ class SplashMiddleware(object):
             # restore arguments before sending request to the downloader
             load_args = {}
             save_args = []
-            arg_fingerprints = {}
+            local_arg_fingerprints = {}
             for name in splash_options['_replaced_args']:
                 fp = args[name]
-                value = self._argument_values[fp]
-
                 # Use remote Splash argument cache: if Splash key
                 # for a value is known then don't send the value to Splash;
                 # if it is unknown then try to save the value on server using
                 # ``save_args``.
                 if fp in self._remote_keys:
                     load_args[name] = self._remote_keys[fp]
-                    value = ""
+                    del args[name]
                 else:
                     save_args.append(name)
-                    arg_fingerprints[name] = fp
+                    args[name] = self._argument_values[fp]
 
-                args[name] = value
+                local_arg_fingerprints[name] = fp
 
-            args['load_args'] = load_args
-            args['save_args'] = save_args
-            splash_options['_arg_fingerprints'] = arg_fingerprints
+            if load_args:
+                args['load_args'] = load_args
+            if save_args:
+                args['save_args'] = save_args
+            splash_options['_local_arg_fingerprints'] = local_arg_fingerprints
 
             del splash_options['_replaced_args']  # ??
 
@@ -342,6 +345,11 @@ class SplashMiddleware(object):
 
         # handle save_args/load_args
         self._process_x_splash_saved_arguments(request, response)
+        if response.status == 498:
+            logger.debug("Got HTTP 498 response for {}; "
+                         "sending arguments again.".format(request),
+                         extra={'spider': spider})
+            return self._498_retry_request(request, response)
 
         if splash_options.get('dont_process_response', False):
             return response
@@ -379,10 +387,37 @@ class SplashMiddleware(object):
         if not saved_args:
             return
         saved_args = parse_x_splash_saved_arguments_header(saved_args)
-        arg_fingerprints = request.meta['splash']['_arg_fingerprints']
+        arg_fingerprints = request.meta['splash']['_local_arg_fingerprints']
         for name, key in saved_args.items():
             fp = arg_fingerprints[name]
             self._remote_keys[fp] = key
+
+    def _498_retry_request(self, request, response):
+        """
+        Return a retry request for HTTP 498 responses. HTTP 498 means
+        load_args are not present on server; client should retry the request
+        with full argument values instead of their hashes.
+        """
+        meta = copy.deepcopy(request.meta)
+        local_arg_fingerprints = meta['splash']['_local_arg_fingerprints']
+        args = meta['splash']['args']
+        args.pop('load_args', None)
+        args['save_args'] = list(local_arg_fingerprints.keys())
+
+        for name, fp in local_arg_fingerprints.items():
+            args[name] = self._argument_values[fp]
+            # print('remote_keys before:', self._remote_keys)
+            self._remote_keys.pop(fp, None)
+            # print('remote_keys after:', self._remote_keys)
+
+        body = json.dumps(args, ensure_ascii=False, sort_keys=True, indent=4)
+        # print(body)
+        request = request.replace(
+            meta=meta,
+            body=body,
+            priority=request.priority+self.retry_498_priority_adjust
+        )
+        return request
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:

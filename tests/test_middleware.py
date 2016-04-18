@@ -480,7 +480,7 @@ def test_cache_args():
     mw.spider_opened(spider)
     dedupe_mw = SplashDeduplicateArgsMiddleware()
 
-    # Send first request - it should use save_args:
+    # ========= Send first request - it should use save_args:
     lua_source = 'function main(splash) end'
     req = SplashRequest('http://example.com/foo',
                         endpoint='execute',
@@ -500,7 +500,10 @@ def test_cache_args():
     # -----> downloader
     assert req.meta['splash']['args']['lua_source'] == lua_source
     assert req.meta['splash']['args']['save_args'] == ['lua_source']
-    assert not req.meta['splash']['args']['load_args']
+    assert 'load_args' not in req.meta['splash']['args']
+    assert req.meta['splash']['_local_arg_fingerprints'] == {
+        'lua_source': list(mw._argument_values.keys())[0]
+    }
     # <---- downloader
     resp_body = b'{}'
     resp = TextResponse("http://example.com",
@@ -511,7 +514,7 @@ def test_cache_args():
                         body=resp_body)
     resp = mw.process_response(req, resp, None)
 
-    # Send second request - it should use load_args
+    # ============ Send second request - it should use load_args
     req2 = SplashRequest('http://example.com/bar',
                         endpoint='execute',
                         args={'lua_source': lua_source},
@@ -525,8 +528,61 @@ def test_cache_args():
     req2 = mw.process_request(req2, spider) or req2
     # -----> downloader
     assert req2.meta['splash']['args']['load_args'] == {"lua_source": "ba001160ef96fe2a3f938fea9e6762e204a562b3"}
-    assert not req2.meta['splash']['args']['lua_source']
-    assert not req2.meta['splash']['args']['save_args']
+    assert "lua_source" not in req2.meta['splash']['args']
+    assert "save_args" not in req2.meta['splash']['args']
+    assert json.loads(req2.body.decode('utf8')) == {
+        'load_args': {'lua_source': 'ba001160ef96fe2a3f938fea9e6762e204a562b3'},
+        'url': 'http://example.com/bar'
+    }
+    # <---- downloader
+    resp = TextResponse("http://example.com/bar",
+                        headers={b'Content-Type': b'application/json'},
+                        body=b'{}')
+    resp = mw.process_response(req, resp, spider)
+
+    # =========== Third request is dispatched to another server where
+    # =========== arguments are expired:
+    req3 = SplashRequest('http://example.com/baz',
+                         endpoint='execute',
+                         args={'lua_source': lua_source},
+                         cache_args=['lua_source'])
+    req3, = list(dedupe_mw.process_spider_output(resp, [req3], spider))
+    # ----> scheduler
+    assert req3.meta['splash']['args']['lua_source'] != lua_source
+    # <---- scheduler
+    req3 = mw.process_request(req3, spider) or req3
+    # -----> downloader
+    assert json.loads(req3.body.decode('utf8')) == {
+        'load_args': {'lua_source': 'ba001160ef96fe2a3f938fea9e6762e204a562b3'},
+        'url': 'http://example.com/baz'
+    }
+    # <---- downloader
+
+    resp_body = json.dumps({
+        "type": "ExpiredArguments",
+        "description": "Arguments stored with ``save_args`` are expired",
+        "info": {"expired": ["html"]},
+        "error": 498
+    })
+    resp = TextResponse("127.0.0.1:8050",
+                        headers={b'Content-Type': b'application/json'},
+                        status=498,
+                        body=resp_body.encode('utf8'))
+    req4 = mw.process_response(req3, resp, spider)
+    assert isinstance(req4, SplashRequest)
+
+    # process this request again
+    req4, = list(dedupe_mw.process_spider_output(resp, [req4], spider))
+    req4 = mw.process_request(req4, spider) or req4
+
+    # it should become save_args request after all middlewares
+    assert json.loads(req4.body.decode('utf8')) == {
+        'lua_source': 'function main(splash) end',
+        'save_args': ['lua_source'],
+        'url': 'http://example.com/baz'
+    }
+    assert mw._remote_keys == {}
+
 
 
 def test_splash_request_no_url():
