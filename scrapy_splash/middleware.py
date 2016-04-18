@@ -341,19 +341,20 @@ class SplashMiddleware(object):
         )
 
         # handle save_args/load_args
-        saved_args = response.headers.get(b'X-Splash-Saved-Arguments')
-        if saved_args:
-            saved_args = parse_x_splash_saved_arguments_header(saved_args)
-            arg_fingerprints = splash_options['_arg_fingerprints']
-            for name, key in saved_args.items():
-                fp = arg_fingerprints[name]
-                self._remote_keys[fp] = key
+        self._process_x_splash_saved_arguments(request, response)
 
         if splash_options.get('dont_process_response', False):
             return response
 
-        from scrapy_splash import (SplashResponse, SplashTextResponse,
-                                   SplashJsonResponse)
+        response = self._change_response_class(request, response)
+
+        if self.log_400 and response.status == 400:
+            self._log_400(request, response, spider)
+
+        return response
+
+    def _change_response_class(self, request, response):
+        from scrapy_splash import SplashResponse, SplashTextResponse
         if not isinstance(response, (SplashResponse, SplashTextResponse)):
             # create a custom Response subclass based on response Content-Type
             # XXX: usually request is assigned to response only when all
@@ -361,16 +362,27 @@ class SplashMiddleware(object):
             # Does it have any negative consequences?
             respcls = responsetypes.from_args(headers=response.headers)
             response = response.replace(cls=respcls, request=request)
-
-        if self.log_400 and response.status == 400:
-            if isinstance(response, SplashJsonResponse):
-                logger.warning(
-                    "Bad request to Splash: %s" % response.data,
-                    {'request': request},
-                    extra={'spider': spider}
-                )
-
         return response
+
+    def _log_400(self, request, response, spider):
+        from scrapy_splash import SplashJsonResponse
+        if isinstance(response, SplashJsonResponse):
+            logger.warning(
+                "Bad request to Splash: %s" % response.data,
+                {'request': request},
+                extra={'spider': spider}
+            )
+
+    def _process_x_splash_saved_arguments(self, request, response):
+        """ Keep track of arguments saved by Splash. """
+        saved_args = response.headers.get(b'X-Splash-Saved-Arguments')
+        if not saved_args:
+            return
+        saved_args = parse_x_splash_saved_arguments_header(saved_args)
+        arg_fingerprints = request.meta['splash']['_arg_fingerprints']
+        for name, key in saved_args.items():
+            fp = arg_fingerprints[name]
+            self._remote_keys[fp] = key
 
     def _set_download_slot(self, request, meta, slot_policy):
         if slot_policy == SlotPolicy.PER_DOMAIN:
