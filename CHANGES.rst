@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.5 (2016-04-18)
+----------------
+
+* ``cache_args`` SplashRequest argument and
+  ``request.meta['splash']['cache_args']`` key allow to save network traffic
+  and disk storage by not storing duplicate Splash arguments in disk request
+  queues and not sending them to Splash multiple times. This feature requires
+  Splash 2.1+.
+
 0.4 (2016-04-14)
 ----------------
 
