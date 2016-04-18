@@ -32,6 +32,7 @@ class SplashRequest(scrapy.Request):
                  magic_response=True,
                  session_id='default',
                  http_status_from_error_code=True,
+                 cache_args=None,
                  meta=None,
                  **kwargs):
 
@@ -55,6 +56,8 @@ class SplashRequest(scrapy.Request):
             splash_meta['dont_send_headers'] = True
         if http_status_from_error_code:
             splash_meta['http_status_from_error_code'] = True
+        if cache_args is not None:
+            splash_meta['cache_args'] = cache_args
 
         if session_id is not None:
             if splash_meta['endpoint'].strip('/') == 'execute':

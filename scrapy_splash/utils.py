@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+import json
 import hashlib
 import six
 
@@ -45,6 +46,12 @@ def dict_hash(obj, start=''):
     return h.hexdigest()
 
 
+def json_based_hash(value):
+    """ Return a hash for any JSON-serializable value """
+    v = json.dumps(value, sort_keys=True, ensure_ascii=False).encode('utf8')
+    return hashlib.sha1(v).hexdigest()
+
+
 def headers_to_scrapy(headers):
     """
     Return scrapy.http.Headers instance from headers data.
@@ -75,3 +82,25 @@ def scrapy_headers_to_unicode_dict(headers):
         to_unicode(key): to_unicode(b','.join(value))
         for key, value in headers.items()
     }
+
+
+def parse_x_splash_saved_arguments_header(value):
+    """
+    Parse X-Splash-Saved-Arguments header value.
+
+    >>> value = u"name1=9a6747fc6259aa374ab4e1bb03074b6ec672cf99;name2=ba001160ef96fe2a3f938fea9e6762e204a562b3"
+    >>> dct = parse_x_splash_saved_arguments_header(value)
+    >>> sorted(list(dct.keys()))
+    ['name1', 'name2']
+    >>> dct['name1']
+    '9a6747fc6259aa374ab4e1bb03074b6ec672cf99'
+    >>> dct['name2']
+    'ba001160ef96fe2a3f938fea9e6762e204a562b3'
+
+    Binary header values are also supported:
+    >>> dct2 = parse_x_splash_saved_arguments_header(value.encode('utf8'))
+    >>> dct2 == dct
+    True
+    """
+    value = to_unicode(value)
+    return dict(kv.split('=', 1) for kv in  value.split(";"))
