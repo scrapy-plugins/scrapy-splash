@@ -508,7 +508,7 @@ Note how are arguments passed to the script::
 
 
 Use a Lua script to get an HTML response with cookies, headers, body
-and method set to correct values; ``lua_script`` argument value is cached
+and method set to correct values; ``lua_source`` argument value is cached
 on Splash server and is not sent with each request (it requires Splash 2.1+)::
 
     import scrapy
