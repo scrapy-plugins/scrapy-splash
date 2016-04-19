@@ -55,9 +55,7 @@ Configuration
           'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
       }
 
-.. note::
-
-   Order `725` is just before `HttpProxyMiddleware` (750) in default
+   Order `723` is just before `HttpProxyMiddleware` (750) in default
    scrapy settings.
 
    HttpCompressionMiddleware priority should be changed in order to allow
@@ -629,13 +627,27 @@ aware of:
    content could vary even if all keys and values are the same, and it means
    dupefilter and cache will work incorrectly.
 
-6. Splash Bad Request (HTTP 400) errors are hard to debug because by default
+6. Default Scrapy duplication filter doesn't take Splash specifics in
+   account. For example, if an URL is sent in a JSON POST request body
+   Scrapy will compute request fingerprint without canonicalizing this URL.
+
+7. Splash Bad Request (HTTP 400) errors are hard to debug because by default
    response content is not displayed by Scrapy. SplashMiddleware logs content
    of HTTP 400 Splash responses by default (it can be turned off by setting
    ``SPLASH_LOG_400 = False`` option).
 
-7. Cookie handling is tedious to implement, and you can't use Scrapy
+8. Cookie handling is tedious to implement, and you can't use Scrapy
    built-in Cookie middleware to handle cookies when working with Splash.
+
+9. Large Splash arguments which don't change with every request
+   (e.g. ``lua_source``) may take a lot of space when saved to Scrapy disk
+   request queues. ``scrapy-splash`` provides a way to store such static
+   parameters only once.
+
+10. Splash 2.1+ provides a way to save network traffic by caching large
+    static arguments on server, but it requires client support: client should
+    send proper ``save_args`` and ``load_args`` values and handle HTTP 498
+    responses.
 
 scrapy-splash utlities allow to handle such edge cases and reduce
 the boilerplate.
