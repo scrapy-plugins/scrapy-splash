@@ -19,7 +19,7 @@ from scrapy_splash.responsetypes import responsetypes
 from scrapy_splash.cookies import jar_to_har, har_to_jar
 from scrapy_splash.utils import (
     scrapy_headers_to_unicode_dict,
-    fast_hash,
+    json_based_hash,
     parse_x_splash_saved_arguments_header,
 )
 
@@ -162,9 +162,9 @@ class SplashDeduplicateArgsMiddleware(object):
             if name not in args:
                 continue
             value = args[name]
-            fp = 'LOCAL+' + fast_hash(value)
-            args[name] = fp
+            fp = 'LOCAL+' + json_based_hash(value)
             spider.state[self.local_values_key][fp] = value
+            args[name] = fp
             request.meta['splash']['_replaced_args'].append(name)
 
         return request

@@ -56,14 +56,31 @@ def _process(value):
     return value
 
 
-def fast_hash(value):
+def _fast_hash(value):
     """
     Return a hash for any JSON-serializable value.
     Hash is not guaranteed to be the same in different Python processes,
     but it is very fast to compute for data structures with large string
     values.
     """
-    value = _process(value)
+    return _json_based_hash(_process(value))
+
+
+_hash_cache = {}  # fast hash => hash
+def json_based_hash(value):
+    """
+    Return a hash for any JSON-serializable value.
+
+    >>> json_based_hash({"foo": "bar", "baz": [1, 2]})
+    'c15a6b4b2d125398b00264fc346d1e1817ba8522'
+    """
+    fp = _fast_hash(value)
+    if fp not in _hash_cache:
+        _hash_cache[fp] = _json_based_hash(value)
+    return _hash_cache[fp]
+
+
+def _json_based_hash(value):
     v = json.dumps(value, sort_keys=True, ensure_ascii=False).encode('utf8')
     return hashlib.sha1(v).hexdigest()
 
