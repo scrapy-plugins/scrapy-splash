@@ -120,7 +120,7 @@ class SplashDeduplicateArgsMiddleware(object):
     values in request queue. It works together with SplashMiddleware downloader
     middleware.
     """
-    state_key = '_splash_local_values'
+    local_values_key = '_splash_local_values'
 
     def process_spider_output(self, response, result, spider):
         for el in result:
@@ -132,7 +132,7 @@ class SplashDeduplicateArgsMiddleware(object):
     def process_start_requests(self, start_requests, spider):
         if not hasattr(spider, 'state'):
             spider.state = {}
-        spider.state.setdefault(self.state_key, {})  # fingerprint => value dict
+        spider.state.setdefault(self.local_values_key, {})  # fingerprint => value dict
 
         for req in start_requests:
             yield self._process_request(req, spider)
@@ -164,7 +164,7 @@ class SplashDeduplicateArgsMiddleware(object):
             value = args[name]
             fp = 'LOCAL+' + fast_hash(value)
             args[name] = fp
-            spider.state[self.state_key][fp] = value
+            spider.state[self.local_values_key][fp] = value
             request.meta['splash']['_replaced_args'].append(name)
 
         return request
@@ -186,7 +186,7 @@ class SplashMiddleware(object):
     default_policy = SlotPolicy.PER_DOMAIN
     rescheduling_priority_adjust = +100
     retry_498_priority_adjust = +50
-    state_key = '_splash_remote_keys'
+    remote_keys_key = '_splash_remote_keys'
 
     def __init__(self, crawler, splash_base_url, slot_policy, log_400):
         self.crawler = crawler
@@ -212,15 +212,16 @@ class SplashMiddleware(object):
             spider.state = {}
 
         # local fingerprint => key returned by splash
-        spider.state.setdefault(self.state_key, {})
+        spider.state.setdefault(self.remote_keys_key, {})
 
     @property
     def _argument_values(self):
-        return self.crawler.spider.state[SplashDeduplicateArgsMiddleware.state_key]
+        key = SplashDeduplicateArgsMiddleware.local_values_key
+        return self.crawler.spider.state[key]
 
     @property
     def _remote_keys(self):
-        return self.crawler.spider.state[self.state_key]
+        return self.crawler.spider.state[self.remote_keys_key]
 
     def process_request(self, request, spider):
         if request.method not in {'GET', 'POST'}:
