@@ -46,8 +46,24 @@ def dict_hash(obj, start=''):
     return h.hexdigest()
 
 
-def json_based_hash(value):
-    """ Return a hash for any JSON-serializable value """
+def _process(value):
+    if isinstance(value, (six.text_type, bytes)):
+        return 'h', hash(value)
+    if isinstance(value, dict):
+        return {k: _process(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [_process(v) for v in value]
+    return value
+
+
+def fast_hash(value):
+    """
+    Return a hash for any JSON-serializable value.
+    Hash is not guaranteed to be the same in different Python processes,
+    but it is very fast to compute for data structures with large string
+    values.
+    """
+    value = _process(value)
     v = json.dumps(value, sort_keys=True, ensure_ascii=False).encode('utf8')
     return hashlib.sha1(v).hexdigest()
 
