@@ -8,3 +8,5 @@ scrapy_splash.egg-info
 .coverage
 .scrapy
 htmlcov
+.hypothesis
+.ipynb_checkpoints
