@@ -53,7 +53,7 @@ def _process(value, sha=False):
         return 'h', hash(value)
     if isinstance(value, dict):
         return {_process(k, sha=True): _process(v, sha) for k, v in value.items()}
-    if isinstance(value, (list, tuple, set, frozenset)):
+    if isinstance(value, (list, tuple)):
         return [_process(v, sha) for v in value]
     return value
 
