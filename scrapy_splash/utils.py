@@ -46,13 +46,15 @@ def dict_hash(obj, start=''):
     return h.hexdigest()
 
 
-def _process(value):
+def _process(value, sha=False):
     if isinstance(value, (six.text_type, bytes)):
+        if sha:
+            return hashlib.sha1(to_bytes(value)).hexdigest()
         return 'h', hash(value)
     if isinstance(value, dict):
-        return {k: _process(v) for k, v in value.items()}
+        return {_process(k, sha=True): _process(v, sha) for k, v in value.items()}
     if isinstance(value, (list, tuple, set, frozenset)):
-        return [_process(v) for v in value]
+        return [_process(v, sha) for v in value]
     return value
 
 
@@ -72,11 +74,11 @@ def json_based_hash(value):
     Return a hash for any JSON-serializable value.
 
     >>> json_based_hash({"foo": "bar", "baz": [1, 2]})
-    'c15a6b4b2d125398b00264fc346d1e1817ba8522'
+    '0570066939bea46c610bfdc35b20f37ef09d05ed'
     """
     fp = _fast_hash(value)
     if fp not in _hash_cache:
-        _hash_cache[fp] = _json_based_hash(value)
+        _hash_cache[fp] = _json_based_hash(_process(value, sha=True))
     return _hash_cache[fp]
 
 
