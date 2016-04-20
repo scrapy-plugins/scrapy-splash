@@ -10,6 +10,12 @@ Changes
   queues and not sending them to Splash multiple times. This feature requires
   Splash 2.1+.
 
+To upgrade from v0.4 enable ``SplashDeduplicateArgsMiddleware`` in settings.py::
+
+  SPIDER_MIDDLEWARES = {
+      'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
+  }
+
 0.4 (2016-04-14)
 ----------------
 
