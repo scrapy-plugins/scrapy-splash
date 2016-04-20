@@ -3,18 +3,18 @@ from setuptools import setup
 
 setup(
     name='scrapy-splash',
-    version='0.5',
+    version='0.6',
     url='https://github.com/scrapy-plugins/scrapy-splash',
     description='JavaScript support for Scrapy using Splash',
     long_description=open('README.rst').read() + "\n\n" + open("CHANGES.rst").read(),
-    author='Scrapy developer',
+    author='Scrapy developers',
     maintainer='Mikhail Korobov',
     maintainer_email='kmike84@gmail.com',
     license='BSD',
     packages=['scrapy_splash'],
     zip_safe=False,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
