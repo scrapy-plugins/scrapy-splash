@@ -20,7 +20,13 @@ def test_headers_to_scrapy():
     assert headers_to_scrapy([{'name': 'Content-Type', 'value': 'text/html'}]) == html_headers
 
 
-_primitive = st.floats() | st.booleans() | st.text() | st.none() | st.integers()
+_primitive = (
+    st.floats(allow_infinity=False, allow_nan=False) |
+    st.booleans() |
+    st.text() |
+    st.none() |
+    st.integers()
+)
 _data = st.recursive(_primitive,
     lambda children: (
         children |
