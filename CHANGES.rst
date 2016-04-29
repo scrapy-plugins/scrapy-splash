@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.6.1 (2016-04-29)
+------------------
+
+* Warning about HTTP methods is no longer logged for non-Splash requests.
+
 0.6 (2016-04-20)
 ----------------
 
