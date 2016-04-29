@@ -224,6 +224,9 @@ class SplashMiddleware(object):
         return self.crawler.spider.state[self.remote_keys_key]
 
     def process_request(self, request, spider):
+        if 'splash' not in request.meta:
+            return
+
         if request.method not in {'GET', 'POST'}:
             logger.warn(
                 "Currently only GET and POST requests are supported by "
@@ -232,9 +235,6 @@ class SplashMiddleware(object):
                 extra={'spider': spider}
             )
             return request
-
-        if 'splash' not in request.meta:
-            return
 
         if request.meta.get("_splash_processed"):
             # don't process the same request more than once
