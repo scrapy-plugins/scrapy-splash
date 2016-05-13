@@ -78,9 +78,9 @@ class SplashCookiesMiddleware(object):
 
         cookies = self._get_request_cookies(request)
         har_to_jar(jar, cookies)
-        self._debug_cookie(request, spider)
 
         splash_args['cookies'] = jar_to_har(jar)
+        self._debug_cookie(request, spider)
 
     def process_response(self, request, response, spider):
         """
@@ -123,21 +123,25 @@ class SplashCookiesMiddleware(object):
 
     def _debug_cookie(self, request, spider):
         if self.debug:
-            cl = [to_native_str(c, errors='replace')
-                  for c in request.headers.getlist('Cookie')]
+            cl = request.meta['splash']['args']['cookies']
             if cl:
-                cookies = "\n".join("Cookie: {}\n".format(c) for c in cl)
-                msg = "Sending cookies to: {}\n{}".format(request, cookies)
+                cookies = '\n'.join(
+                    'Cookie: {}'.format(self._har_repr(c)) for c in cl)
+                msg = 'Sending cookies to: {}\n{}'.format(request, cookies)
                 logger.debug(msg, extra={'spider': spider})
 
     def _debug_set_cookie(self, response, spider):
         if self.debug:
-            cl = [to_native_str(c, errors='replace')
-                  for c in response.headers.getlist('Set-Cookie')]
+            cl = response.data['cookies']
             if cl:
-                cookies = "\n".join("Set-Cookie: {}\n".format(c) for c in cl)
-                msg = "Received cookies from: {}\n{}".format(response, cookies)
+                cookies = '\n'.join(
+                    'Set-Cookie: {}'.format(self._har_repr(c)) for c in cl)
+                msg = 'Received cookies from: {}\n{}'.format(response, cookies)
                 logger.debug(msg, extra={'spider': spider})
+
+    @staticmethod
+    def _har_repr(har_cookie):
+        return '{}={}'.format(har_cookie['name'], har_cookie['value'])
 
 
 class SplashDeduplicateArgsMiddleware(object):
