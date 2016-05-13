@@ -38,7 +38,7 @@ def _get_mw():
 
 
 def _get_cookie_mw():
-    return SplashCookiesMiddleware()
+    return SplashCookiesMiddleware(debug=True)
 
 
 def test_nosplash():

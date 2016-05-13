@@ -14,6 +14,7 @@ import scrapy
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 from scrapy import signals
+from scrapy.utils.python import to_native_str
 
 from scrapy_splash.responsetypes import responsetypes
 from scrapy_splash.cookies import jar_to_har, har_to_jar
@@ -45,8 +46,13 @@ class SplashCookiesMiddleware(object):
     It should process requests before SplashMiddleware, and process responses
     after SplashMiddleware.
     """
-    def __init__(self):
+    def __init__(self, debug=False):
         self.jars = defaultdict(CookieJar)
+        self.debug = debug
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(debug=crawler.settings.getbool('COOKIES_DEBUG'))
 
     def process_request(self, request, spider):
         """
@@ -72,6 +78,7 @@ class SplashCookiesMiddleware(object):
 
         cookies = self._get_request_cookies(request)
         har_to_jar(jar, cookies)
+        self._debug_cookie(request, spider)
 
         splash_args['cookies'] = jar_to_har(jar)
 
@@ -103,6 +110,7 @@ class SplashCookiesMiddleware(object):
         jar = self.jars[session_id]
         request_cookies = splash_options['args'].get('cookies', [])
         har_to_jar(jar, response.data['cookies'], request_cookies)
+        self._debug_set_cookie(response, spider)
         response.cookiejar = jar
         return response
 
@@ -112,6 +120,24 @@ class SplashCookiesMiddleware(object):
                 {'name': k, 'value': v} for k, v in request.cookies.items()
             ]
         return request.cookies or []
+
+    def _debug_cookie(self, request, spider):
+        if self.debug:
+            cl = [to_native_str(c, errors='replace')
+                  for c in request.headers.getlist('Cookie')]
+            if cl:
+                cookies = "\n".join("Cookie: {}\n".format(c) for c in cl)
+                msg = "Sending cookies to: {}\n{}".format(request, cookies)
+                logger.debug(msg, extra={'spider': spider})
+
+    def _debug_set_cookie(self, response, spider):
+        if self.debug:
+            cl = [to_native_str(c, errors='replace')
+                  for c in response.headers.getlist('Set-Cookie')]
+            if cl:
+                cookies = "\n".join("Set-Cookie: {}\n".format(c) for c in cl)
+                msg = "Received cookies from: {}\n{}".format(response, cookies)
+                logger.debug(msg, extra={'spider': spider})
 
 
 class SplashDeduplicateArgsMiddleware(object):
