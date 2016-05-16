@@ -96,6 +96,23 @@ Configuration
     could change in future.
 
 
+There are also some additional options available.
+Put them into your ``settings.py`` if you want to change the defaults:
+
+* ``SPLASH_COOKIES_DEBUG`` is ``False`` by default.
+  Set to ``True`` to enable debugging cookies in the ``SplashCookiesMiddleware``.
+  This option is similar to ``COOKIES_DEBUG``
+  for the built-in scarpy cookies middleware: it logs sent and received cookies
+  for all requests.
+* ``SPLASH_LOG_400`` is ``True`` by default - it instructs to log all 400 errors
+  from Splash. They are important because they show errors occurred
+  when executing the Splash script. Set it to ``False`` to disable this logging.
+* ``SPLASH_SLOT_POLICY`` is ``scrapy_splash.SlotPolicy.PER_DOMAIN`` by default.
+  It specifies how concurrency & politeness are maintained for Splash requests,
+  and specify the default value for ``slot_policy`` argument for
+  ``SplashRequest``, which is described below.
+
+
 Usage
 =====
 
