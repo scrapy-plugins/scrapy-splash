@@ -52,7 +52,7 @@ class SplashCookiesMiddleware(object):
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(debug=crawler.settings.getbool('COOKIES_DEBUG'))
+        return cls(debug=crawler.settings.getbool('SPLASH_COOKIES_DEBUG'))
 
     def process_request(self, request, spider):
         """
