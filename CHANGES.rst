@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.7 (2016-05-16)
+----------------
+
+* ``SPLASH_COOKIES_DEBUG`` setting allows to log cookies
+  sent and received to/from Splash in ``cookies`` request/response fields.
+  It is similar to Scrapy's builtin ``COOKIES_DEBUG``, but works for
+  Splash requests;
+* README cleanup.
+
 0.6.1 (2016-04-29)
 ------------------
 
