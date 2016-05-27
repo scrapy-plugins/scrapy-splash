@@ -530,12 +530,6 @@ on Splash server and is not sent with each request (it requires Splash 2.1+)::
     from scrapy_splash import SplashRequest
 
     script = """
-    function last_response_headers(splash)
-      local entries = splash:history()
-      local last_entry = entries[#entries]
-      return last_entry.response.headers
-    end
-
     function main(splash)
       splash:init_cookies(splash.args.cookies)
       assert(splash:go{
@@ -546,8 +540,12 @@ on Splash server and is not sent with each request (it requires Splash 2.1+)::
         })
       assert(splash:wait(0.5))
 
+      local entries = splash:history()
+      local last_response = entries[#entries].response
       return {
-        headers = last_response_headers(splash),
+        url = splash:url(),
+        headers = last_response.headers,
+        http_status = last_response.status,
         cookies = splash:get_cookies(),
         html = splash:html(),
       }
