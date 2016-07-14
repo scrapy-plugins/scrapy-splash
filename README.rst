@@ -347,7 +347,7 @@ In order to support sessions the following is required:
 3. updated cookies should be sent back to the client;
 4. client should merge current cookies wiht the updated cookies.
 
-For (2) and (3) Splash provides ``spalsh:get_cookies()`` and
+For (2) and (3) Splash provides ``splash:get_cookies()`` and
 ``splash:init_cookies()`` methods which can be used in Splash Lua scripts.
 
 scrapy-splash provides helpers for (1) and (4): to send current cookies
