@@ -14,7 +14,6 @@ import scrapy
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
 from scrapy import signals
-from scrapy.utils.python import to_native_str
 
 from scrapy_splash.responsetypes import responsetypes
 from scrapy_splash.cookies import jar_to_har, har_to_jar
