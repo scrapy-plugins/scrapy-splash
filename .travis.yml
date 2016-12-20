@@ -11,6 +11,7 @@ env:
     - TOXENV=py27
     - TOXENV=py33
     - TOXENV=py35
+    - TOXENV=py27-scrapy10
 
 install:
     - pip install -U tox codecov
