@@ -5,10 +5,10 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy_splash import SplashRequest
 
 
-class DmozSpider(scrapy.Spider):
-    name = "dmoz"
-    allowed_domains = ["dmoz.org"]
-    start_urls = ['http://www.dmoz.org/']
+class QuotesSpider(scrapy.Spider):
+    name = "quotes"
+    allowed_domains = ["toscrape.com"]
+    start_urls = ['http://quotes.toscrape.com/']
 
     # http_user = 'splash-user'
     # http_pass = 'splash-password'
