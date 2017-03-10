@@ -37,6 +37,14 @@ _data = st.recursive(_primitive,
     ),
     max_leaves=5,
 )
+_data_notuples = st.recursive(_primitive,
+    lambda children: (
+        children |
+        st.lists(children) |
+        st.dictionaries(st.text(), children)
+    ),
+    max_leaves=5,
+)
 
 
 @given(_data, _data)
@@ -48,7 +56,7 @@ def test_fast_hash(val1, val2):
     assert _fast_hash(val1) != _fast_hash(val2)
 
 
-@given(_data, _data)
+@given(_data_notuples, _data_notuples)
 def test_json_based_hash(val1, val2):
     assume(val1 != val2)
     assert json_based_hash(val1) == json_based_hash(val1)

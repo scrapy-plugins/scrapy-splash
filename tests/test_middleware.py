@@ -584,7 +584,6 @@ def test_cache_args():
     assert mw._remote_keys == {}
 
 
-
 def test_splash_request_no_url():
     mw = _get_mw()
     lua_source = "function main(splash) return {result='ok'} end"

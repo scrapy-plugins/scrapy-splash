@@ -79,7 +79,6 @@ def test_request_fingerprint_splash():
     assert_fingerprints_match(r2, r4)
 
 
-
 @pytest.fixture()
 def splash_middleware():
     return _get_mw()
