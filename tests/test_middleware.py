@@ -82,7 +82,7 @@ def test_splash_request():
     assert json.loads(to_native_str(req2.body)) == expected_body
 
     # check response post-processing
-    response = HtmlResponse("http://127.0.0.1:8050/render.html",
+    response = TextResponse("http://127.0.0.1:8050/render.html",
                             # Scrapy doesn't pass request to constructor
                             # request=req2,
                             headers={b'Content-Type': b'text/html'},
