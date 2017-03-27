@@ -5,7 +5,7 @@ import json
 import base64
 import re
 
-from scrapy.http import Response, TextResponse
+from scrapy.http import Response, TextResponse, HtmlResponse
 from scrapy import Selector
 
 from scrapy_splash.utils import headers_to_scrapy
@@ -86,6 +86,13 @@ class SplashTextResponse(_SplashResponseMixin, TextResponse):
         kwargs.setdefault('encoding', self.encoding)
         return _SplashResponseMixin.replace(self, *args, **kwargs)
 
+
+class SplashHtmlResponse(_SplashResponseMixin, HtmlResponse):
+    """
+    This HtmlResponse subclass sets response.url to the URL of a remote website
+    instead of an URL of Splash server. "Real" response URL is still available
+    as ``response.real_url``.
+    """
 
 class SplashJsonResponse(SplashResponse):
     """
