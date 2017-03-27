@@ -70,12 +70,13 @@ class SplashTextResponse(_SplashResponseMixin, TextResponse):
         return _SplashResponseMixin.replace(self, *args, **kwargs)
 
 
-class SplashHtmlResponse(_SplashResponseMixin, SplashTextResponse):
+class SplashHtmlResponse(SplashTextResponse):
     """
     This HtmlResponse subclass sets response.url to the URL of a remote website
     instead of an URL of Splash server. "Real" response URL is still available
     as ``response.real_url``.
     """
+    pass
 
 class SplashJsonResponse(SplashResponse):
     """
