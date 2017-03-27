@@ -7,7 +7,7 @@ import base64
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
-from scrapy.http import Response, TextResponse
+from scrapy.http import Response, TextResponse, HtmlResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
 import scrapy_splash
@@ -82,14 +82,14 @@ def test_splash_request():
     assert json.loads(to_native_str(req2.body)) == expected_body
 
     # check response post-processing
-    response = TextResponse("http://127.0.0.1:8050/render.html",
+    response = HtmlResponse("http://127.0.0.1:8050/render.html",
                             # Scrapy doesn't pass request to constructor
                             # request=req2,
                             headers={b'Content-Type': b'text/html'},
                             body=b"<html><body>Hello</body></html>")
     response2 = mw.process_response(req2, response, None)
     response2 = cookie_mw.process_response(req2, response2, None)
-    assert isinstance(response2, scrapy_splash.SplashTextResponse)
+    assert isinstance(response2, scrapy_splash.SplashHtmlResponse)
     assert response2 is not response
     assert response2.real_url == req2.url
     assert response2.url == req.url
