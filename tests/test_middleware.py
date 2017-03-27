@@ -89,7 +89,7 @@ def test_splash_request():
                             body=b"<html><body>Hello</body></html>")
     response2 = mw.process_response(req2, response, None)
     response2 = cookie_mw.process_response(req2, response2, None)
-    assert isinstance(response2, scrapy_splash.SplashHtmlResponse)
+    assert isinstance(response2, scrapy_splash.SplashTextResponse)
     assert response2 is not response
     assert response2.real_url == req2.url
     assert response2.url == req.url
