@@ -9,7 +9,7 @@ import scrapy_splash
 
 class SplashResponseTypes(ResponseTypes):
     CLASSES = {
-        'text/html': 'scrapy_splash.response.SplashTextResponse',
+        'text/html': 'scrapy_splash.response.SplashHtmlResponse',
         'application/atom+xml': 'scrapy_splash.response.SplashTextResponse',
         'application/rdf+xml': 'scrapy_splash.response.SplashTextResponse',
         'application/rss+xml': 'scrapy_splash.response.SplashTextResponse',
