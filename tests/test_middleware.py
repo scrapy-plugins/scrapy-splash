@@ -7,7 +7,7 @@ import base64
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
-from scrapy.http import Response, TextResponse, HtmlResponse
+from scrapy.http import Response, TextResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
 import scrapy_splash
