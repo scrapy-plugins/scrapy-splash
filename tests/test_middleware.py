@@ -406,11 +406,13 @@ def test_magic_response_http_error():
     assert resp.url == "http://example.com/foo"
 
 
-def test_change_response_class():
+def test_change_response_class_to_text():
     mw = _get_mw()
     req = SplashRequest('http://example.com/', magic_response=True)
     req = mw.process_request(req, None)
-    # Such response can come when downloading a file, or returning splash:html()
+    # Such response can come when downloading a file,
+    # or returning splash:html(): the headers say it's binary,
+    # but it can be decoded so it becomes a TextResponse.
     resp = TextResponse('http://mysplash.example.com/execute',
                         headers={b'Content-Type': b'application/pdf'},
                         body=b'ascii binary data',

@@ -13,6 +13,7 @@ from six.moves.http_cookiejar import CookieJar
 import scrapy
 from scrapy.exceptions import NotConfigured
 from scrapy.http.headers import Headers
+from scrapy.http.response.text import TextResponse
 from scrapy import signals
 
 from scrapy_splash.responsetypes import responsetypes
@@ -399,6 +400,12 @@ class SplashMiddleware(object):
             # downloader middlewares are executed. Here it is set earlier.
             # Does it have any negative consequences?
             respcls = responsetypes.from_args(headers=response.headers)
+            if isinstance(response, TextResponse) and respcls is SplashResponse:
+                # Even if the headers say it's binary, it has already
+                # been detected as a text response by scrapy (for example
+                # because it was decoded successfully), so we should not
+                # convert it to SplashResponse.
+                respcls = SplashTextResponse
             response = response.replace(cls=respcls, request=request)
         return response
 
