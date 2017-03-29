@@ -424,6 +424,26 @@ def test_change_response_class_to_text():
     assert resp2.body == b'ascii binary data'
 
 
+def test_change_response_class_to_json_binary():
+    mw = _get_mw()
+    # We set magic_response to False, because it's not a kind of data we would
+    # expect from splash: we just return binary data.
+    # If we set magic_response to True, the middleware will fail,
+    # but this is ok because magic_response presumes we are expecting
+    # a valid splash json response.
+    req = SplashRequest('http://example.com/', magic_response=False)
+    req = mw.process_request(req, None)
+    resp = Response('http://mysplash.example.com/execute',
+                    headers={b'Content-Type': b'application/json'},
+                    body=b'non-decodable data: \x98\x11\xe7\x17\x8f',
+                    )
+    resp2 = mw.process_response(req, resp, None)
+    assert isinstance(resp2, Response)
+    assert resp2.url == 'http://example.com/'
+    assert resp2.headers == {b'Content-Type': [b'application/json']}
+    assert resp2.body == b'non-decodable data: \x98\x11\xe7\x17\x8f'
+
+
 def test_magic_response_caching(tmpdir):
     # prepare middlewares
     spider = scrapy.Spider(name='foo')
