@@ -406,6 +406,22 @@ def test_magic_response_http_error():
     assert resp.url == "http://example.com/foo"
 
 
+def test_change_response_class():
+    mw = _get_mw()
+    req = SplashRequest('http://example.com/', magic_response=True)
+    req = mw.process_request(req, None)
+    # Such response can come when downloading a file, or returning splash:html()
+    resp = TextResponse('http://mysplash.example.com/execute',
+                        headers={b'Content-Type': b'application/pdf'},
+                        body=b'ascii binary data',
+                        encoding='utf-8')
+    resp2 = mw.process_response(req, resp, None)
+    assert isinstance(resp2, TextResponse)
+    assert resp2.url == 'http://example.com/'
+    assert resp2.headers == {b'Content-Type': [b'application/pdf']}
+    assert resp2.body == b'ascii binary data'
+
+
 def test_magic_response_caching(tmpdir):
     # prepare middlewares
     spider = scrapy.Spider(name='foo')
