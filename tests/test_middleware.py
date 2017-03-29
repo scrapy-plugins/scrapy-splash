@@ -406,6 +406,44 @@ def test_magic_response_http_error():
     assert resp.url == "http://example.com/foo"
 
 
+def test_change_response_class_to_text():
+    mw = _get_mw()
+    req = SplashRequest('http://example.com/', magic_response=True)
+    req = mw.process_request(req, None)
+    # Such response can come when downloading a file,
+    # or returning splash:html(): the headers say it's binary,
+    # but it can be decoded so it becomes a TextResponse.
+    resp = TextResponse('http://mysplash.example.com/execute',
+                        headers={b'Content-Type': b'application/pdf'},
+                        body=b'ascii binary data',
+                        encoding='utf-8')
+    resp2 = mw.process_response(req, resp, None)
+    assert isinstance(resp2, TextResponse)
+    assert resp2.url == 'http://example.com/'
+    assert resp2.headers == {b'Content-Type': [b'application/pdf']}
+    assert resp2.body == b'ascii binary data'
+
+
+def test_change_response_class_to_json_binary():
+    mw = _get_mw()
+    # We set magic_response to False, because it's not a kind of data we would
+    # expect from splash: we just return binary data.
+    # If we set magic_response to True, the middleware will fail,
+    # but this is ok because magic_response presumes we are expecting
+    # a valid splash json response.
+    req = SplashRequest('http://example.com/', magic_response=False)
+    req = mw.process_request(req, None)
+    resp = Response('http://mysplash.example.com/execute',
+                    headers={b'Content-Type': b'application/json'},
+                    body=b'non-decodable data: \x98\x11\xe7\x17\x8f',
+                    )
+    resp2 = mw.process_response(req, resp, None)
+    assert isinstance(resp2, Response)
+    assert resp2.url == 'http://example.com/'
+    assert resp2.headers == {b'Content-Type': [b'application/json']}
+    assert resp2.body == b'non-decodable data: \x98\x11\xe7\x17\x8f'
+
+
 def test_magic_response_caching(tmpdir):
     # prepare middlewares
     spider = scrapy.Spider(name='foo')
