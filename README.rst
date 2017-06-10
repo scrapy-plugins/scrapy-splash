@@ -327,7 +327,7 @@ SplashJsonResponse provide extra features:
     or to base64-decoded value of 'body' key;
   * response.status is set from the value of 'http_status' key.
 
-When ``respone.body`` is updated in SplashJsonResponse
+When ``response.body`` is updated in SplashJsonResponse
 (either from 'html' or from 'body' keys) familiar ``response.css``
 and ``response.xpath`` methods are available.
 
