@@ -2,6 +2,7 @@
 import os
 import pytest
 from pytest_twisted import inlineCallbacks
+from twisted.internet.defer import returnValue
 from twisted.web.resource import Resource
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.python import to_bytes
@@ -38,7 +39,8 @@ def crawl_items(spider_cls, resource_cls, settings, spider_kwargs=None):
     with MockServer(resource_cls) as s:
         root_url = s.root_url
         yield crawler.crawl(url=root_url, **spider_kwargs)
-    return crawler.spider.collected_items, s.root_url, crawler
+    result = crawler.spider.collected_items, s.root_url, crawler
+    returnValue(result)
 
 
 def make_crawler(spider_cls, settings):
