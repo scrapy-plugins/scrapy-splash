@@ -20,7 +20,7 @@ matrix:
         - python: 3.6
           env: TOXENV=py36
         - python: 2.7
-          env: TOXENV=py27-scrapy10
+          env: TOXENV=py27-scrapy11
 
 before_install:
     - docker pull scrapinghub/splash
