@@ -679,3 +679,9 @@ https://github.com/scrapy-plugins/scrapy-splash
 
 To run tests, install "tox" Python package and then run ``tox`` command
 from the source checkout.
+
+To run integration tests, start Splash and set SPLASH_URL env variable
+to Splash address before running ``tox`` command::
+
+   docker run -d --rm -p8050:8050 scrapinghub/splash:3.0
+   SPLASH_URL=http://127.0.0.1:8050 tox -e py36
