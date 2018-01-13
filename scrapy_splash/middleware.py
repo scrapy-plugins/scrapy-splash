@@ -38,10 +38,11 @@ class SlotPolicy(object):
 
 class SplashCookiesMiddleware(object):
     """
-    This middleware maintains cookiejars for Splash requests.
+    This downloader middleware maintains cookiejars for Splash requests.
 
     It gets cookies from 'cookies' field in Splash JSON responses
-    and sends current cookies in 'cookies' JSON POST argument.
+    and sends current cookies in 'cookies' JSON POST argument instead of
+    sending them in http headers.
 
     It should process requests before SplashMiddleware, and process responses
     after SplashMiddleware.
@@ -57,12 +58,14 @@ class SplashCookiesMiddleware(object):
     def process_request(self, request, spider):
         """
         For Splash requests add 'cookies' key with current
-        cookies to request.meta['splash']['args']
+        cookies to ``request.meta['splash']['args']`` and remove cookie
+        headers sent to Splash itself.
         """
         if 'splash' not in request.meta:
             return
 
         if request.meta.get('_splash_processed'):
+            request.headers.pop('Cookie', None)
             return
 
         splash_options = request.meta['splash']
