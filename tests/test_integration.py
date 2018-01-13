@@ -2,6 +2,7 @@
 import scrapy
 from pytest_twisted import inlineCallbacks
 from twisted.web.resource import Resource
+from w3lib.url import canonicalize_url
 
 from scrapy_splash import SplashRequest
 from .utils import crawl_items, requires_splash, HtmlResource
@@ -195,7 +196,7 @@ def test_cookies(settings):
     splash_headers = resp2.request.headers
     headers = resp2.data['args']['headers']
     cookies = resp2.data['args']['cookies']
-    assert headers['Referer'].strip('/') == url.strip('/')
+    assert canonicalize_url(headers['Referer']) == canonicalize_url(url)
     assert _cookie_dict(cookies) == {
         # 'login': '1',
         'x-set-splash': '1',
