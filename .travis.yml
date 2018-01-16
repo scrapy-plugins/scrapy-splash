@@ -1,27 +1,35 @@
 language: python
-sudo: false
+sudo: required
+
+services:
+    - docker
 
 branches:
     only:
         - master
         - /^\d\.\d+$/
+
 matrix:
-  include:
-    - python: 2.7
-      env: TOXENV=py27
-    - python: 3.4
-      env: TOXENV=py34
-    - python: 3.5
-      env: TOXENV=py35
-    - python: 3.6
-      env: TOXENV=py36
-    - python: 2.7
-      env: TOXENV=py27-scrapy10
+    include:
+        - python: 2.7
+          env: TOXENV=py27
+        - python: 3.4
+          env: TOXENV=py34
+        - python: 3.5
+          env: TOXENV=py35
+        - python: 3.6
+          env: TOXENV=py36
+        - python: 2.7
+          env: TOXENV=py27-scrapy11
+
+before_install:
+    - docker pull scrapinghub/splash
+    - docker run --rm -d -p 8050:8050 --network host scrapinghub/splash
 
 install:
     - pip install -U tox codecov
 
-script: tox
+script: SPLASH_URL=http://127.0.0.1:8050 tox
 
 after_success:
     - codecov
