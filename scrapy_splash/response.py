@@ -11,6 +11,14 @@ from scrapy import Selector
 from scrapy_splash.utils import headers_to_scrapy
 
 
+def get_splash_status(resp):
+    return getattr(resp, 'splash_response_status', resp.status)
+
+
+def get_splash_headers(resp):
+    return getattr(resp, 'splash_response_headers', resp.headers)
+
+
 class _SplashResponseMixin(object):
     """
     This mixin fixes response.url and adds response.real_url

@@ -41,6 +41,11 @@ class HelloWorld(HtmlResource):
     extra_headers = {'X-MyHeader': 'my value', 'Set-Cookie': 'sessionid=ABCD'}
 
 
+class Http400Resource(HtmlResource):
+    status_code = 400
+    html = "Website returns HTTP 400 error"
+
+
 
 class ManyCookies(Resource, object):
     class SetMyCookie(HtmlResource):
@@ -129,6 +134,37 @@ def test_basic_lua(settings):
     assert resp.headers['Content-Type'] == b'text/html'
     assert resp.splash_response_headers['Content-Type'] == b'application/json'
     assert resp.data['args']['foo'] == 'bar'
+
+
+@requires_splash
+@inlineCallbacks
+def test_bad_request(settings):
+    class BadRequestSpider(ResponseSpider):
+        custom_settings = {'HTTPERROR_ALLOW_ALL': True}
+
+        def start_requests(self):
+            yield SplashRequest(self.url, endpoint='execute',
+                                args={'lua_source': DEFAULT_SCRIPT, 'wait': 'bar'})
+
+    class GoodRequestSpider(ResponseSpider):
+        custom_settings = {'HTTPERROR_ALLOW_ALL': True}
+
+        def start_requests(self):
+            yield SplashRequest(self.url, endpoint='execute',
+                                args={'lua_source': DEFAULT_SCRIPT})
+
+
+    items, url, crawler = yield crawl_items(BadRequestSpider, HelloWorld,
+                                            settings)
+    resp = items[0]['response']
+    assert resp.status == 400
+    assert resp.splash_response_status == 400
+
+    items, url, crawler = yield crawl_items(GoodRequestSpider, Http400Resource,
+                                            settings)
+    resp = items[0]['response']
+    assert resp.status == 400
+    assert resp.splash_response_status == 200
 
 
 @requires_splash

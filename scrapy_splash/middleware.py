@@ -23,6 +23,7 @@ from scrapy_splash.utils import (
     json_based_hash,
     parse_x_splash_saved_arguments_header,
 )
+from scrapy_splash.response import get_splash_status, get_splash_headers
 
 
 logger = logging.getLogger(__name__)
@@ -390,7 +391,7 @@ class SplashMiddleware(object):
 
         response = self._change_response_class(request, response)
 
-        if self.log_400 and response.status == 400:
+        if self.log_400 and get_splash_status(response) == 400:
             self._log_400(request, response, spider)
 
         return response

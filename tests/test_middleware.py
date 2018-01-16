@@ -401,12 +401,13 @@ def test_magic_response_http_error():
         "error": 400,
         "type": "ScriptError"
     }
-    resp = TextResponse("http://mysplash.example.com/execute",
+    resp = TextResponse("http://mysplash.example.com/execute", status=400,
                         headers={b'Content-Type': b'application/json'},
                         body=json.dumps(resp_data).encode('utf8'))
     resp = mw.process_response(req, resp, None)
     assert resp.data == resp_data
     assert resp.status == 404
+    assert resp.splash_response_status == 400
     assert resp.url == "http://example.com/foo"
 
 
