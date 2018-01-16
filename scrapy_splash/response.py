@@ -30,14 +30,23 @@ class _SplashResponseMixin(object):
             if _url is not None:
                 self.real_url = url
                 url = _url
+        self.splash_response_status = kwargs.pop('splash_response_status',
+                                                 None)
+        self.splash_response_headers = kwargs.pop('splash_response_headers',
+                                                  None)
         super(_SplashResponseMixin, self).__init__(url, *args, **kwargs)
+        if self.splash_response_status is None:
+            self.splash_response_status = self.status
+        if self.splash_response_headers is None:
+            self.splash_response_headers = self.headers.copy()
 
     def replace(self, *args, **kwargs):
         """Create a new Response with the same attributes except for those
         given new values.
         """
         for x in ['url', 'status', 'headers', 'body', 'request', 'flags',
-                  'real_url']:
+                  'real_url', 'splash_response_status',
+                  'splash_response_headers']:
             kwargs.setdefault(x, getattr(self, x))
         cls = kwargs.pop('cls', self.__class__)
         return cls(*args, **kwargs)
@@ -80,11 +89,14 @@ class SplashJsonResponse(SplashResponse):
     (['splash']['magic_response'] is not False), several other response
     attributes (headers, body, url, status code) are set automatically:
 
-    * response.headers are filled from 'headers' keys;
-    * response.url is set to the value of 'url' key;
+    * response.url is set to the value of 'url' key, original url is
+      available as ``responce.real_url``;
+    * response.headers are filled from 'headers' keys; original headers are
+      available as ``response.splash_response_headers``;
+    * response.status is set from the value of 'http_status' key; original
+      status is available as ``response.splash_response_status``;
     * response.body is set to the value of 'html' key,
       or to base64-decoded value of 'body' key;
-    * response.status is set from the value of 'http_status' key.
     """
     def __init__(self, *args, **kwargs):
         self.cookiejar = None
