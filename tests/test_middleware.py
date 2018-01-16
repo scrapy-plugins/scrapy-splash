@@ -188,7 +188,8 @@ def test_splash_request_parameters():
     assert response2.text == response2.body_as_unicode() == res_body
     assert response2.encoding == 'utf8'
     assert response2.headers == {b'Content-Type': [b'application/json']}
-    assert response2.status == 200
+    assert response2.splash_response_headers == response2.headers
+    assert response2.status == response2.splash_response_status == 200
 
 
 def test_magic_response():
@@ -233,7 +234,9 @@ def test_magic_response():
         b'X-My-Header': [b'foo'],
         b'Set-Cookie': [b'bar=baz'],
     }
+    assert resp2.splash_response_headers == {b'Content-Type': [b'application/json']}
     assert resp2.status == 404
+    assert resp2.splash_response_status == 200
     assert resp2.url == "http://exmaple.com/#id42"
     assert len(resp2.cookiejar) == 3
     cookies = [c for c in resp2.cookiejar]
@@ -359,7 +362,8 @@ def test_magic_response2():
     assert resp2.data == resp_data
     assert resp2.body == b'binary data'
     assert resp2.headers == {b'Content-Type': [b'text/plain']}
-    assert resp2.status == 200
+    assert resp2.splash_response_headers == {b'Content-Type': [b'application/json']}
+    assert resp2.status == resp2.splash_response_status == 200
     assert resp2.url == "http://example.com/"
 
 
@@ -397,12 +401,13 @@ def test_magic_response_http_error():
         "error": 400,
         "type": "ScriptError"
     }
-    resp = TextResponse("http://mysplash.example.com/execute",
+    resp = TextResponse("http://mysplash.example.com/execute", status=400,
                         headers={b'Content-Type': b'application/json'},
                         body=json.dumps(resp_data).encode('utf8'))
     resp = mw.process_response(req, resp, None)
     assert resp.data == resp_data
     assert resp.status == 404
+    assert resp.splash_response_status == 400
     assert resp.url == "http://example.com/foo"
 
 

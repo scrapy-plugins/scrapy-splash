@@ -271,6 +271,9 @@ to set ``meta['splash']['args']`` use ``SplashRequest(..., args=myargs)``.
     and ``assert(splash:go(..))`` fails with an HTTP error
     response.status is also set to HTTP error code.
 
+  Original URL, status and headers are available as ``response.real_url``,
+  ``response.splash_response_status`` and ``response.splash_response_headers``.
+
   This option is set to True by default if you use SplashRequest.
   ``render.json`` and ``execute`` endpoints may not have all the necessary
   keys/values in the response.
@@ -631,7 +634,9 @@ aware of:
 
 3. As seen by Scrapy, response.url is an URL of the Splash server.
    scrapy-splash fixes it to be an URL of a requested page.
-   "Real" URL is still available as ``response.real_url``.
+   "Real" URL is still available as ``response.real_url``. scrapy-splash also
+   allows to handle ``response.status`` and ``response.headers`` transparently
+   on Scrapy side.
 
 4. Some options depend on each other - for example, if you use timeout_
    Splash option then you may want to set ``download_timeout``
