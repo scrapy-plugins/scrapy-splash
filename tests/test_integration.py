@@ -127,7 +127,11 @@ def test_basic_lua(settings):
 @requires_splash
 @inlineCallbacks
 def test_cookies(settings):
+
+    # 64K for headers is over Twisted limit,
+    # so if these headers are sent to Splash request would fail.
     BOMB = 'x' * 64000
+
     class LuaScriptSpider(ResponseSpider):
         """ Cookies must be sent to website, not to Splash """
         custom_settings = {
