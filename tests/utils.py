@@ -4,8 +4,9 @@ import pytest
 from pytest_twisted import inlineCallbacks
 from twisted.internet.defer import returnValue
 from twisted.web.resource import Resource
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.python import to_bytes
+from scrapy.crawler import Crawler
+
+from scrapy_splash.utils import to_bytes
 from tests.mockserver import MockServer
 
 
@@ -52,7 +53,7 @@ def make_crawler(spider_cls, settings):
         Spider.__name__ = spider_cls.__name__
         Spider.__module__ = spider_cls.__module__
         spider_cls = Spider
-    return CrawlerRunner(settings).create_crawler(spider_cls)
+    return Crawler(spider_cls, settings)
 
 
 class CollectorPipeline:

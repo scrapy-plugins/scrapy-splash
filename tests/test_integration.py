@@ -78,7 +78,7 @@ def test_basic(settings):
     assert len(items) == 1
     resp = items[0]['response']
     assert resp.url == url
-    assert resp.css('body::text').get().strip() == "hello world!"
+    assert resp.css('body::text').extract_first().strip() == "hello world!"
 
 
 @requires_splash
@@ -99,7 +99,7 @@ def test_reload(settings):
     assert crawler.stats.get_value('dupefilter/filtered') == 1
     resp = items[0]['response']
     assert resp.url == url
-    assert resp.css('body::text').get().strip() == "hello world!"
+    assert resp.css('body::text').extract_first().strip() == "hello world!"
     assert resp.status == resp.splash_response_status == 200
     assert resp.headers == resp.splash_response_headers
     assert resp.splash_response_headers['Content-Type'] == b"text/html; charset=utf-8"
@@ -128,7 +128,7 @@ def test_basic_lua(settings):
     resp = items[0]['response']
     assert resp.url == url + "/#foo"
     assert resp.status == resp.splash_response_status == 200
-    assert resp.css('body::text').get().strip() == "hello world!"
+    assert resp.css('body::text').extract_first().strip() == "hello world!"
     assert resp.data['jsvalue'] == 3
     assert resp.headers['X-MyHeader'] == b'my value'
     assert resp.headers['Content-Type'] == b'text/html'
