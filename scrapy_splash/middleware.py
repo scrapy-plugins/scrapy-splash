@@ -380,7 +380,7 @@ class SplashMiddleware(object):
 
         # handle save_args/load_args
         self._process_x_splash_saved_arguments(request, response)
-        if response.status == 498:
+        if get_splash_status(response) == 498:
             logger.debug("Got HTTP 498 response for {}; "
                          "sending arguments again.".format(request),
                          extra={'spider': spider})
@@ -424,7 +424,7 @@ class SplashMiddleware(object):
 
     def _process_x_splash_saved_arguments(self, request, response):
         """ Keep track of arguments saved by Splash. """
-        saved_args = response.headers.get(b'X-Splash-Saved-Arguments')
+        saved_args = get_splash_headers(response).get(b'X-Splash-Saved-Arguments')
         if not saved_args:
             return
         saved_args = parse_x_splash_saved_arguments_header(saved_args)

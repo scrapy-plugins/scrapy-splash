@@ -169,6 +169,38 @@ def test_bad_request(settings):
 
 @requires_splash
 @inlineCallbacks
+def test_cache_args(settings):
+
+    class CacheArgsSpider(ResponseSpider):
+        def _request(self, url):
+            return SplashRequest(url, endpoint='execute',
+                                 args={'lua_source': DEFAULT_SCRIPT, 'x': 'yy'},
+                                 cache_args=['lua_source'])
+
+        def start_requests(self):
+            yield self._request(self.url)
+
+        def parse(self, response):
+            yield {'response': response}
+            yield self._request(self.url + "#foo")
+
+
+    items, url, crawler = yield crawl_items(CacheArgsSpider, HelloWorld,
+                                            settings)
+    assert len(items) == 2
+    resp = items[0]['response']
+    assert b"function main(splash)" in resp.request.body
+    assert b"yy" in resp.request.body
+    print(resp.body, resp.request.body)
+
+    resp = items[1]['response']
+    assert b"function main(splash)" not in resp.request.body
+    assert b"yy" in resp.request.body
+    print(resp.body, resp.request.body)
+
+
+@requires_splash
+@inlineCallbacks
 def test_cookies(settings):
 
     # 64K for headers is over Twisted limit,
