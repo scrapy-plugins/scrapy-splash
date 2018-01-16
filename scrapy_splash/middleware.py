@@ -313,7 +313,7 @@ class SplashMiddleware(object):
         args.setdefault('url', request.url)
         if request.method == 'POST':
             args.setdefault('http_method', request.method)
-            # XXX: non-UTF8 bodies are not supported now
+            # XXX: non-UTF8 request bodies are not supported now
             args.setdefault('body', request.body.decode('utf8'))
 
         if not splash_options.get('dont_send_headers'):
