@@ -262,7 +262,7 @@ class SplashMiddleware(object):
             return
 
         if request.method not in {'GET', 'POST'}:
-            logger.warn(
+            logger.warning(
                 "Currently only GET and POST requests are supported by "
                 "SplashMiddleware; %(request)s will be handled without Splash",
                 {'request': request},
