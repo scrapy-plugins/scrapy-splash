@@ -9,5 +9,7 @@ from .middleware import (
 )
 from .dupefilter import SplashAwareDupeFilter, splash_request_fingerprint
 from .cache import SplashAwareFSCacheStorage
-from .response import SplashResponse, SplashTextResponse, SplashJsonResponse
+from .response import (
+    SplashResponse, SplashTextResponse, SplashHtmlResponse, SplashJsonResponse,
+)
 from .request import SplashRequest, SplashFormRequest
