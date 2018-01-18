@@ -194,3 +194,9 @@ class SplashJsonResponse(SplashResponse):
         # response.headers
         if 'headers' in self.data:
             self.headers = headers_to_scrapy(self.data['headers'])
+
+
+splash_scrapy_text_responses = (
+    (SplashTextResponse, TextResponse),
+    (SplashHtmlResponse, HtmlResponse),
+)
