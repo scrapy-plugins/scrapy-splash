@@ -5,7 +5,12 @@ import json
 from hypothesis import given, assume
 from hypothesis import strategies as st
 from scrapy.http import Headers
-from scrapy_splash.utils import headers_to_scrapy, _fast_hash, json_based_hash
+from scrapy_splash.utils import (
+    headers_to_scrapy,
+    _fast_hash,
+    json_based_hash,
+    dict_hash
+)
 
 
 def test_headers_to_scrapy():
@@ -54,6 +59,13 @@ def test_fast_hash(val1, val2):
     assume(_dump(val1) != _dump(val2))
     assert _fast_hash(val1) == _fast_hash(val1)
     assert _fast_hash(val1) != _fast_hash(val2)
+
+
+@given(_data, _data)
+def test_dict_hash(val1, val2):
+    assume(val1 != val2)
+    assert dict_hash(val1) == dict_hash(val1)
+    assert dict_hash(val1) != dict_hash(val2)
 
 
 @given(_data_notuples, _data_notuples)

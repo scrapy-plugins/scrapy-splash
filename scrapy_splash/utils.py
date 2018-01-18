@@ -40,6 +40,8 @@ def dict_hash(obj, start=''):
             value = str(obj)
         elif isinstance(obj, (six.text_type, bytes)):
             value = obj
+        elif obj is None:
+            value = b''
         else:
             raise ValueError("Unsupported value type: %s" % obj.__class__)
         h.update(to_bytes(value))
