@@ -19,6 +19,13 @@ from scrapy_splash import (
     SlotPolicy,
     SplashCookiesMiddleware,
     SplashDeduplicateArgsMiddleware,
+    SplashHtmlResponse,
+    SplashTextResponse,
+)
+
+splash_scrapy_content_types = (
+    (SplashTextResponse, TextResponse, b'text/*'),
+    (SplashHtmlResponse, HtmlResponse, b'text/html'),
 )
 
 
@@ -62,10 +69,10 @@ def test_nosplash():
 
 
 @pytest.mark.parametrize(
-    'scrapy_response_type, splash_response_type',
-    scrapy_splash.response.splash_scrapy_text_responses
+    'splash_response_type, scrapy_response_type, content_type',
+    splash_scrapy_content_types,
 )
-def test_splash_request(splash_response_type, scrapy_response_type):
+def test_splash_request(splash_response_type, scrapy_response_type, content_type):
     mw = _get_mw()
     cookie_mw = _get_cookie_mw()
 
@@ -87,11 +94,12 @@ def test_splash_request(splash_response_type, scrapy_response_type):
     assert json.loads(to_native_str(req2.body)) == expected_body
 
     # check response post-processing
-    response = scrapy_response_type("http://127.0.0.1:8050/render.html",
+    response = scrapy_response_type(
+                            url="http://127.0.0.1:8050/render.html",
                             # Scrapy doesn't pass request to constructor
                             # request=req2,
-                            headers={b'Content-Type': b'text/html'},
-                            body=b"<html><body>Hello</body></html>")
+                            headers={b'Content-Type': content_type},
+                            body=b"<html><body>Hello</body></html>", )
     response2 = mw.process_response(req2, response, None)
     response2 = cookie_mw.process_response(req2, response2, None)
     assert isinstance(response2, splash_response_type)
@@ -100,7 +108,7 @@ def test_splash_request(splash_response_type, scrapy_response_type):
     assert response2.url == req.url
     assert response2.body == b"<html><body>Hello</body></html>"
     assert response2.css("body").extract_first() == "<body>Hello</body>"
-    assert response2.headers == {b'Content-Type': [b'text/html']}
+    assert response2.headers == {b'Content-Type': [content_type, ]}
 
     # check .replace method
     response3 = response2.replace(status=404)
