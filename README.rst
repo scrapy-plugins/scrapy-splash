@@ -676,6 +676,19 @@ the boilerplate.
 .. _timeout: http://splash.readthedocs.org/en/latest/api.html#arg-timeout
 
 
+Getting help
+============
+
+* for problems with rendering pages read "`Splash FAQ`_" page
+* for Scrapy-related bugs take a look at "`reporting Scrapy bugs`_" page
+
+Best approach to get any other help is to ask a question on `Stack Overflow`_
+
+.. _reporting Scrapy bugs: https://doc.scrapy.org/en/master/contributing.html#reporting-bugs
+.. _Splash FAQ: http://splash.readthedocs.io/en/stable/faq.html#website-is-not-rendered-correctly
+.. _Stack Overflow: https://stackoverflow.com/questions/tagged/scrapy-splash?sort=frequent&pageSize=15&mixed=1
+
+
 Contributing
 ============
 
