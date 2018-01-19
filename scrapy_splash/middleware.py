@@ -402,7 +402,7 @@ class SplashMiddleware(object):
         from scrapy_splash.response import splash_scrapy_text_responses
         splash_text_response_types = tuple(x for x, y in splash_scrapy_text_responses)
 
-        if not isinstance(response, (SplashResponse, *splash_text_response_types)):
+        if not isinstance(response, (SplashResponse, splash_text_response_types)):
             # create a custom Response subclass based on response Content-Type
             # XXX: usually request is assigned to response only when all
             # downloader middlewares are executed. Here it is set earlier.
