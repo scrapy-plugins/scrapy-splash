@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+import copy
 import scrapy
 from scrapy.http import FormRequest
 
@@ -40,7 +41,7 @@ class SplashRequest(scrapy.Request):
             url = 'about:blank'
         url = to_native_str(url)
 
-        meta = meta or {}
+        meta = copy.deepcopy(meta) or {}
         splash_meta = meta.setdefault('splash', {})
         splash_meta.setdefault('endpoint', endpoint)
         splash_meta.setdefault('slot_policy', slot_policy)
