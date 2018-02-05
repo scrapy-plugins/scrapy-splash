@@ -50,3 +50,11 @@ def test_form_request_from_response():
     assert 'clickable1' not in fs
     assert fs['one'] == ['1']
     assert fs['two'] == ['2']
+
+
+def test_splash_request_meta():
+    meta = {'foo': 'bar'}
+    req = SplashRequest('http://example.com', meta=meta)
+    assert 'splash' in req.meta
+    assert req.meta['foo'] == 'bar'
+    assert meta == {'foo': 'bar'}
