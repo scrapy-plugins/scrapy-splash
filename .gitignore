@@ -10,3 +10,4 @@ scrapy_splash.egg-info
 htmlcov
 .hypothesis
 .ipynb_checkpoints
+.pytest_cache
