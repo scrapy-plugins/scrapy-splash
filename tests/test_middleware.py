@@ -286,6 +286,22 @@ def test_magic_response():
         if c.name == 'spam':
             assert c.value == 'ham'
 
+    resp_data = {
+        'url': "http://exmaple.com/#id42",
+        'body': base64.b64encode(b'\xad').decode('ascii'),
+        'headers': [
+            {'name': 'Content-Type', 'value': "text/html; charset=cp1251"},
+        ]
+    }
+    resp = TextResponse("http://mysplash.example.com/execute",
+                        headers={b'Content-Type': b'application/json'},
+                        body=json.dumps(resp_data).encode('utf8'))
+
+    try:
+        resp2 = mw.process_response(req, resp, None)
+    except:
+        assert 'process_response raised exception' is None
+
 
 def test_cookies():
     mw = _get_mw()
