@@ -328,7 +328,13 @@ SplashJsonResponse provide extra features:
   * response.url is set to the value of 'url' key;
   * response.body is set to the value of 'html' key,
     or to base64-decoded value of 'body' key;
-  * response.status is set from the value of 'http_status' key.
+  * response.status is set to the value of 'http_status' key.
+    When ``meta['splash']['http_status_from_error_code']`` is True
+    and ``assert(splash:go(..))`` fails with an HTTP error
+    response.status is also set to HTTP error code.
+
+  Original URL, status and headers are available as ``response.real_url``,
+  ``response.splash_response_status`` and ``response.splash_response_headers``.
 
 When ``response.body`` is updated in SplashJsonResponse
 (either from 'html' or from 'body' keys) familiar ``response.css``
