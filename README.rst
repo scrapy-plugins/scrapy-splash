@@ -315,8 +315,8 @@ SplashJsonResponse provide extra features:
 
   * response.headers are filled from 'headers' keys;
   * response.url is set to the value of 'url' key;
-  * response.body is set to the value of 'html' key,
-    or to base64-decoded value of 'body' key;
+  * response.body is set to the value of 'html' key, utf-8 text expected,
+    or to base64-decoded binary value of 'body' key;
   * response.status is set to the value of 'http_status' key.
     When ``meta['splash']['http_status_from_error_code']`` is True
     and ``assert(splash:go(..))`` fails with an HTTP error
