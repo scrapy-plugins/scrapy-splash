@@ -85,7 +85,7 @@ Configuration
 
       HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
-   If you use other cache storage then it is necesary to subclass it and
+   If you use other cache storage then it is necessary to subclass it and
    replace all ``scrapy.util.request.request_fingerprint`` calls with
    ``scrapy_splash.splash_request_fingerprint``.
 
@@ -102,7 +102,7 @@ Put them into your ``settings.py`` if you want to change the defaults:
 * ``SPLASH_COOKIES_DEBUG`` is ``False`` by default.
   Set to ``True`` to enable debugging cookies in the ``SplashCookiesMiddleware``.
   This option is similar to ``COOKIES_DEBUG``
-  for the built-in scarpy cookies middleware: it logs sent and received cookies
+  for the built-in Scrapy cookies middleware: it logs sent and received cookies
   for all requests.
 * ``SPLASH_LOG_400`` is ``True`` by default - it instructs to log all 400 errors
   from Splash. They are important because they show errors occurred
@@ -348,7 +348,7 @@ In order to support sessions the following is required:
 2. Splash script should make requests using these cookies and update
    them from HTTP response headers or JavaScript code;
 3. updated cookies should be sent back to the client;
-4. client should merge current cookies wiht the updated cookies.
+4. client should merge current cookies with the updated cookies.
 
 For (2) and (3) Splash provides ``splash:get_cookies()`` and
 ``splash:init_cookies()`` methods which can be used in Splash Lua scripts.
@@ -669,7 +669,7 @@ aware of:
     send proper ``save_args`` and ``load_args`` values and handle HTTP 498
     responses.
 
-scrapy-splash utlities allow to handle such edge cases and reduce
+scrapy-splash utilities allow to handle such edge cases and reduce
 the boilerplate.
 
 .. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
