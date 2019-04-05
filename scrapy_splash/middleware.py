@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import copy
 import json
 import logging
+import re
 import warnings
 from collections import defaultdict
 
@@ -233,6 +234,11 @@ class SplashMiddleware(object):
     def from_crawler(cls, crawler):
         splash_base_url = crawler.settings.get('SPLASH_URL',
                                                cls.default_splash_url)
+        if not re.match('^https?://', splash_base_url):
+            raise NotConfigured(
+                'The SPLASH_URL setting does not start with http:// or '
+                'https://: {}'.format(splash_base_url)
+            )
         log_400 = crawler.settings.getbool('SPLASH_LOG_400', True)
         slot_policy = crawler.settings.get('SPLASH_SLOT_POLICY',
                                            cls.default_policy)
