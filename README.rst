@@ -162,6 +162,18 @@ Alternatively, you can use regular scrapy.Request and
         }
     })
 
+It is also possible to configure Splash for all requests in a Spider by default
+using a ``splash`` spider attribute::
+
+    class MySpider(Spider):
+        name = 'myspider'
+        splash = {
+            # …
+        }
+
+If you use a ``splash`` spider attribute, you can still override those Splash
+settings for specific requests using the ``splash`` request meta key.
+
 Use ``request.meta['splash']`` API in middlewares or when scrapy.Request
 subclasses are used (there is also ``SplashFormRequest`` described below).
 For example, ``meta['splash']`` allows to create a middleware which enables
