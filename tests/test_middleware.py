@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import
 import copy
 import json
@@ -769,21 +770,54 @@ def test_adjust_timeout():
 
 def test_spider_attribute():
     req_url = "http://scrapy.org"
-    req1 = scrapy.Request(req_url)
-
     spider = scrapy.Spider("example")
+    mw = _get_mw()
+
+    req1 = scrapy.Request(req_url)
     spider.splash = {"args": {"images": 0}}
 
     mw = _get_mw()
-    req1 = mw.process_request(req1, spider)
-    assert "_splash_processed" in req1.meta
-    assert "render.json" in req1.url
-    assert "url" in json.loads(req1.body)
-    assert json.loads(req1.body).get("url") == req_url
-    assert "images" in json.loads(req1.body)
-    assert req1.method == 'POST'
+    req2 = mw.process_request(req1, spider)
+    assert "_splash_processed" in req2.meta
+    assert "render.json" in req2.url
+    request_data = json.loads(req2.body.decode('utf8'))
+    assert "url" in request_data
+    assert request_data.get("url") == req_url
+    assert "images" in request_data
+    assert req2.method == 'POST'
 
-    # spider attribute blank middleware disabled
-    spider.splash = {}
+    response = Response(req_url, request=req2)
+    response2 = mw.process_response(req2, response, spider)
+    assert response2 is not response
+
+
+def test_spider_attribute_dont_splash():
+    req_url = "http://scrapy.org"
+    spider = scrapy.Spider("example")
+    mw = _get_mw()
+
+    req1 = scrapy.Request(req_url, meta={'dont_splash': True})
+    spider.splash = {"args": {"images": 0}}
+
     req2 = mw.process_request(req1, spider)
     assert req2 is None
+
+    response = Response(req_url, request=req1)
+    response2 = mw.process_response(req1, response, spider)
+    assert response2 is response
+
+
+def test_spider_attribute_blank():
+    req_url = "http://scrapy.org"
+    spider = scrapy.Spider("example")
+    mw = _get_mw()
+
+    req1 = scrapy.Request(req_url)
+    spider.splash = {}
+
+    req2 = mw.process_request(req1, spider)
+    assert req2 is None
+
+    response = Response(req_url, request=req1)
+    response2 = mw.process_response(req1, response, spider)
+    assert response2 is response
