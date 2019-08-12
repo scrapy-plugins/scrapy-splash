@@ -706,12 +706,6 @@ def test_slot_policy_single_slot():
         'slot_policy': scrapy_splash.SlotPolicy.SINGLE_SLOT
     }}
 
-def test_slot_policy_single_slot():
-    mw = _get_mw()
-    meta = {'splash': {
-        'slot_policy': scrapyjs.SlotPolicy.SINGLE_SLOT
-    }}
-
     req1 = scrapy.Request("http://example.com/path?key=value", meta=meta)
     req1 = mw.process_request(req1, None)
 
@@ -721,16 +715,11 @@ def test_slot_policy_single_slot():
     assert req1.meta.get('download_slot')
     assert req1.meta['download_slot'] == req2.meta['download_slot']
 
-def test_slot_policy_per_domain():
-    mw = _get_mw()
-    meta = {'splash': {
-        'slot_policy': scrapy_splash.SlotPolicy.PER_DOMAIN
-    }}
 
 def test_slot_policy_per_domain():
     mw = _get_mw()
     meta = {'splash': {
-        'slot_policy': scrapyjs.SlotPolicy.PER_DOMAIN
+        'slot_policy': scrapy_splash.SlotPolicy.PER_DOMAIN
     }}
 
     req1 = scrapy.Request("http://example.com/path?key=value", meta=meta)
@@ -748,18 +737,11 @@ def test_slot_policy_per_domain():
     assert req1.meta['download_slot'] == req2.meta['download_slot']
     assert req1.meta['download_slot'] != req3.meta['download_slot']
 
-def test_slot_policy_scrapy_default():
-    mw = _get_mw()
-    req = scrapy.Request("http://example.com", meta = {'splash': {
-        'slot_policy': scrapy_splash.SlotPolicy.SCRAPY_DEFAULT
-    }})
-    req = mw.process_request(req, None)
-    assert 'download_slot' not in req.meta
 
 def test_slot_policy_scrapy_default():
     mw = _get_mw()
     req = scrapy.Request("http://example.com", meta = {'splash': {
-        'slot_policy': scrapyjs.SlotPolicy.SCRAPY_DEFAULT
+        'slot_policy': scrapy_splash.SlotPolicy.SCRAPY_DEFAULT
     }})
     req = mw.process_request(req, None)
     assert 'download_slot' not in req.meta
