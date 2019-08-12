@@ -172,7 +172,9 @@ using a ``splash`` spider attribute::
         }
 
 If you use a ``splash`` spider attribute, you can still override those Splash
-settings for specific requests using the ``splash`` request meta key.
+settings for specific requests using the ``splash`` request meta key, or
+disable Splash completely setting the ``dont_splash`` request meta key to
+``True``.
 
 Use ``request.meta['splash']`` API in middlewares or when scrapy.Request
 subclasses are used (there is also ``SplashFormRequest`` described below).

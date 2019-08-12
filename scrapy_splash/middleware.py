@@ -258,7 +258,7 @@ class SplashMiddleware(object):
         return self.crawler.spider.state[self.remote_keys_key]
 
     def _get_splash_options(self, request, spider):
-        if request.meta.get("dont_proxy"):
+        if request.meta.get("dont_splash") is True:
             return
         spider_options = getattr(spider, "splash", {})
         request_options = request.meta.get("splash")
