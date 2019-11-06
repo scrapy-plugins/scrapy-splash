@@ -102,7 +102,7 @@ Put them into your ``settings.py`` if you want to change the defaults:
 * ``SPLASH_COOKIES_DEBUG`` is ``False`` by default.
   Set to ``True`` to enable debugging cookies in the ``SplashCookiesMiddleware``.
   This option is similar to ``COOKIES_DEBUG``
-  for the built-in scrapy cookies middleware: it logs sent and received cookies
+  for the built-in Scrapy cookies middleware: it logs sent and received cookies
   for all requests.
 * ``SPLASH_LOG_400`` is ``True`` by default - it instructs to log all 400 errors
   from Splash. They are important because they show errors occurred
