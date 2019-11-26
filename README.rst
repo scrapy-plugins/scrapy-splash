@@ -679,6 +679,7 @@ the boilerplate.
 Getting help
 ============
 
+* see the **Frequently Asked Questions (FAQ)** section below
 * for problems with rendering pages read "`Splash FAQ`_" page
 * for Scrapy-related bugs take a look at "`reporting Scrapy bugs`_" page
 
@@ -686,7 +687,28 @@ Best approach to get any other help is to ask a question on `Stack Overflow`_
 
 .. _reporting Scrapy bugs: https://doc.scrapy.org/en/master/contributing.html#reporting-bugs
 .. _Splash FAQ: http://splash.readthedocs.io/en/stable/faq.html#website-is-not-rendered-correctly
-.. _Stack Overflow: https://stackoverflow.com/questions/tagged/scrapy-splash?sort=frequent&pageSize=15&mixed=1
+.. _Stack Overflow: https://stackoverflow.com/questions/tagged/scrapy-splash?sort=frequent
+
+
+Frequently Asked Questions (FAQ)
+================================
+
+How to use scrapy-splash from the Scrapy shell?
+-----------------------------------------------
+
+After you run ``scrapy shell`` without arguments inside a Scrapy project
+configured to use scrapy-splash, you can create a
+``scrapy_splash.SplashRequest`` object and call ``fetch`` to load it into the
+shell::
+
+    $ scrapy shell
+    …
+    >>> from scrapy_splash import SplashRequest
+    >>> request = SplashRequest('https://example.com')
+    >>> fetch(request)
+
+Alternatively, you may `use the Splash HTTP API
+<https://stackoverflow.com/a/35359507>`_.
 
 
 Contributing
