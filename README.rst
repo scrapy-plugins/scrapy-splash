@@ -285,6 +285,7 @@ Use ``scrapy_splash.SplashFormRequest`` if you want to make a ``FormRequest``
 via splash. It accepts the same arguments as ``SplashRequest``,
 and also ``formdata``, like ``FormRequest`` from scrapy::
 
+    >>> from scrapy_splash import SplashFormRequest
     >>> SplashFormRequest('http://example.com', formdata={'foo': 'bar'})
     <POST http://example.com>
 
