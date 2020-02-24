@@ -417,6 +417,7 @@ Get HTML contents and a screenshot::
 
         # ...
             splash_args = {
+                'wait': 1,
                 'html': 1,
                 'png': 1,
                 'width': 600,
