@@ -5,7 +5,7 @@ import scrapy
 from scrapy.http import FormRequest
 
 from scrapy_splash import SlotPolicy
-from scrapy_splash.utils import to_native_str
+from scrapy_splash.utils import to_unicode
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
@@ -39,7 +39,7 @@ class SplashRequest(scrapy.Request):
 
         if url is None:
             url = 'about:blank'
-        url = to_native_str(url)
+        url = to_unicode(url)
 
         meta = copy.deepcopy(meta) or {}
         splash_meta = meta.setdefault('splash', {})
