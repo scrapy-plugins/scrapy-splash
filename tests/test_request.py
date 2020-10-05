@@ -1,4 +1,7 @@
-import cgi
+try:
+    from urllib.parse import parse_qs
+except ImportError:
+    from urlparse import parse_qs
 
 from scrapy.http import HtmlResponse
 from scrapy_splash import SplashRequest, SplashFormRequest
@@ -45,7 +48,7 @@ def test_form_request_from_response():
         response, formdata={'two': '2'}, clickdata={'name': 'clickable2'})
     assert req.method == 'GET'
     assert req.meta['splash']['args']['url'] == req.url
-    fs = cgi.parse_qs(req.url.partition('?')[2], True)
+    fs = parse_qs(req.url.partition('?')[2], True)
     assert fs['clickable2'] == ['clicked2']
     assert 'clickable1' not in fs
     assert fs['one'] == ['1']
