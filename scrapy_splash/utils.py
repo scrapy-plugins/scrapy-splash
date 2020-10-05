@@ -5,17 +5,12 @@ import hashlib
 import six
 
 from scrapy.http import Headers
-try:
-    import scrapy
-    if scrapy.version_info >= (2, ):
-        from scrapy.utils.python import to_unicode
-    else:
-        from scrapy.utils.python import to_native_str as to_unicode
-    from scrapy.utils.python import to_bytes
-except ImportError:
-    # scrapy < 1.1
-    from scrapy.utils.python import unicode_to_str as to_bytes
-    from scrapy.utils.python import str_to_unicode as to_unicode
+import scrapy
+if scrapy.version_info >= (2, ):
+    from scrapy.utils.python import to_unicode
+else:
+    from scrapy.utils.python import to_native_str as to_unicode
+from scrapy.utils.python import to_bytes
 
 
 def dict_hash(obj, start=''):
