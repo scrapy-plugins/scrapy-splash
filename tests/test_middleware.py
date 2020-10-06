@@ -627,21 +627,6 @@ def test_cache_args():
     assert mw._remote_keys == {}
 
 
-def test_splash_request_no_url():
-    mw = _get_mw()
-    lua_source = "function main(splash) return {result='ok'} end"
-    req1 = SplashRequest(meta={'splash': {
-        'args': {'lua_source': lua_source},
-        'endpoint': 'execute',
-    }})
-    req = mw.process_request(req1, None)
-    assert req.url == 'http://127.0.0.1:8050/execute'
-    assert json.loads(to_unicode(req.body)) == {
-        'url': 'about:blank',
-        'lua_source': lua_source
-    }
-
-
 def test_post_request():
     mw = _get_mw()
     for body in [b'', b'foo=bar']:

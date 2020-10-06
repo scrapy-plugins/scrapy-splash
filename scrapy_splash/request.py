@@ -20,7 +20,7 @@ class SplashRequest(scrapy.Request):
     It requires SplashMiddleware to work.
     """
     def __init__(self,
-                 url=None,
+                 url,
                  callback=None,
                  method='GET',
                  endpoint='render.html',
@@ -37,8 +37,6 @@ class SplashRequest(scrapy.Request):
                  meta=None,
                  **kwargs):
 
-        if url is None:
-            url = 'about:blank'
         url = to_unicode(url)
 
         meta = copy.deepcopy(meta) or {}
