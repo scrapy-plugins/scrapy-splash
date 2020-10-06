@@ -6,11 +6,7 @@ See https://github.com/scrapy/scrapy/issues/900 for more info.
 from __future__ import absolute_import
 from copy import deepcopy
 
-try:
-    from scrapy.dupefilters import RFPDupeFilter
-except ImportError:
-    # scrapy < 1.0
-    from scrapy.dupefilter import RFPDupeFilter
+from scrapy.dupefilters import RFPDupeFilter
 
 from scrapy.utils.url import canonicalize_url
 from scrapy.utils.request import request_fingerprint

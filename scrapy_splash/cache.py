@@ -8,11 +8,7 @@ See https://github.com/scrapy/scrapy/issues/900 for more info.
 from __future__ import absolute_import
 import os
 
-try:
-    from scrapy.extensions.httpcache import FilesystemCacheStorage
-except ImportError:
-    # scrapy < 1.0
-    from scrapy.contrib.httpcache import FilesystemCacheStorage
+from scrapy.extensions.httpcache import FilesystemCacheStorage
 
 from .dupefilter import splash_request_fingerprint
 
