@@ -11,7 +11,7 @@ from scrapy.http import Response, TextResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
 import scrapy_splash
-from scrapy_splash.utils import to_native_str
+from scrapy_splash.utils import to_unicode
 from scrapy_splash import (
     SplashRequest,
     SplashMiddleware,
@@ -79,7 +79,7 @@ def test_splash_request():
     assert repr(req2) == "<GET http://example.com?foo=bar&url=1&wait=100 via http://127.0.0.1:8050/render.html>"
 
     expected_body = {'url': req.url}
-    assert json.loads(to_native_str(req2.body)) == expected_body
+    assert json.loads(to_unicode(req2.body)) == expected_body
 
     # check response post-processing
     response = TextResponse("http://127.0.0.1:8050/render.html",
@@ -627,21 +627,6 @@ def test_cache_args():
     assert mw._remote_keys == {}
 
 
-def test_splash_request_no_url():
-    mw = _get_mw()
-    lua_source = "function main(splash) return {result='ok'} end"
-    req1 = SplashRequest(meta={'splash': {
-        'args': {'lua_source': lua_source},
-        'endpoint': 'execute',
-    }})
-    req = mw.process_request(req1, None)
-    assert req.url == 'http://127.0.0.1:8050/execute'
-    assert json.loads(to_native_str(req.body)) == {
-        'url': 'about:blank',
-        'lua_source': lua_source
-    }
-
-
 def test_post_request():
     mw = _get_mw()
     for body in [b'', b'foo=bar']:
@@ -650,10 +635,10 @@ def test_post_request():
                               body=body,
                               meta={'splash': {'endpoint': 'render.html'}})
         req = mw.process_request(req1, None)
-        assert json.loads(to_native_str(req.body)) == {
+        assert json.loads(to_unicode(req.body)) == {
             'url': 'http://example.com',
             'http_method': 'POST',
-            'body': to_native_str(body),
+            'body': to_unicode(body),
         }
 
 
@@ -667,7 +652,7 @@ def test_override_splash_url():
     })
     req = mw.process_request(req1, None)
     assert req.url == 'http://splash.example.com/render.png'
-    assert json.loads(to_native_str(req.body)) == {'url': req1.url}
+    assert json.loads(to_unicode(req.body)) == {'url': req1.url}
 
 
 def test_url_with_fragment():
@@ -677,7 +662,7 @@ def test_url_with_fragment():
         'splash': {'args': {'url': url}}
     })
     req = mw.process_request(req, None)
-    assert json.loads(to_native_str(req.body)) == {'url': url}
+    assert json.loads(to_unicode(req.body)) == {'url': url}
 
 
 def test_splash_request_url_with_fragment():
@@ -685,7 +670,7 @@ def test_splash_request_url_with_fragment():
     url = "http://example.com#id1"
     req = SplashRequest(url)
     req = mw.process_request(req, None)
-    assert json.loads(to_native_str(req.body)) == {'url': url}
+    assert json.loads(to_unicode(req.body)) == {'url': url}
 
 
 def test_float_wait_arg():
@@ -697,7 +682,7 @@ def test_float_wait_arg():
         }
     })
     req = mw.process_request(req1, None)
-    assert json.loads(to_native_str(req.body)) == {'url': req1.url, 'wait': 0.5}
+    assert json.loads(to_unicode(req.body)) == {'url': req1.url, 'wait': 0.5}
 
 
 def test_slot_policy_single_slot():

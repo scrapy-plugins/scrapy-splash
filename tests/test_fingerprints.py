@@ -108,9 +108,9 @@ def requests():
         dict(url=url2, args={'wait': 0.5}),     # 5
         dict(url=url3),                         # 6
         dict(url=url2, method='POST'),          # 7
-        dict(args={'wait': 0.5}),               # 8
-        dict(args={'wait': 0.5}),               # 9
-        dict(args={'wait': 0.7}),               # 10
+        dict(url=url3, args={'wait': 0.5}),     # 8
+        dict(url=url3, args={'wait': 0.5}),     # 9
+        dict(url=url3, args={'wait': 0.7}),     # 10
         dict(url=url4),                         # 11
     ]
     splash_requests = [SplashRequest(**kwargs) for kwargs in request_kwargs]
