@@ -4,8 +4,10 @@ import copy
 import json
 import base64
 
+from pytest import raises
 import scrapy
 from scrapy.core.engine import ExecutionEngine
+from scrapy.exceptions import NotConfigured
 from scrapy.utils.test import get_crawler
 from scrapy.http import Response, TextResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
@@ -750,3 +752,15 @@ def test_adjust_timeout():
     })
     req2 = mw.process_request(req2, None)
     assert req2.meta['download_timeout'] == 30
+
+
+def test_bad_splash_url():
+    crawler = _get_crawler({'SPLASH_URL': 'localhost:1234'})
+    with raises(NotConfigured):
+        mw = SplashMiddleware.from_crawler(crawler)
+
+
+def test_bad_slot_policy():
+    crawler = _get_crawler({'SPLASH_SLOT_POLICY': 'asdf'})
+    with raises(NotConfigured):
+        mw = SplashMiddleware.from_crawler(crawler)
