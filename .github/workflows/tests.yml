@@ -9,21 +9,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - python-version: 2.7
+        - os: ubuntu-18.04
+          python-version: 2.7
+          env:
+            TOXENV: py27-scrapy10
+        - os: ubuntu-18.04
+          python-version: 2.7
           env:
             TOXENV: py
-        - python-version: 3.4
+        - os: ubuntu-18.04
+          python-version: 3.4
           env:
             TOXENV: py
-        - python-version: 3.5
+        - os: ubuntu-18.04
+          python-version: 3.5
           env:
             TOXENV: py
         - python-version: 3.6
           env:
             TOXENV: py
-        - python-version: 2.7
-          env:
-            TOXENV: py27-scrapy10
 
     steps:
     - uses: actions/checkout@v2
@@ -44,5 +48,4 @@ jobs:
         SPLASH_URL=http://127.0.0.1:8050 tox
 
     - name: Upload coverage report
-      if: matrix.os == 'ubuntu-latest'
       run: bash <(curl -s https://codecov.io/bash)
