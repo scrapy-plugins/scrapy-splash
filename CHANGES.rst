@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.8.0 (2019-07-NN)
+0.8.0 (2021-10-04)
 ------------------
 
 *   Responses now expose the HTTP status code and headers from Splash as
