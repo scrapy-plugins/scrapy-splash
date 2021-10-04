@@ -24,7 +24,7 @@ jobs:
         - os: ubuntu-18.04
           python-version: 3.5
           env:
-            TOXENV: py
+            TOXENV: py35
         - python-version: 3.6
           env:
             TOXENV: py
