@@ -1,3 +1,0 @@
-scrapy
-service_identity
-six

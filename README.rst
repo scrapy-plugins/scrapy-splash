@@ -6,8 +6,8 @@ Scrapy & JavaScript integration through Splash
    :target: https://pypi.python.org/pypi/scrapy-splash
    :alt: PyPI Version
 
-.. image:: https://travis-ci.org/scrapy-plugins/scrapy-splash.svg?branch=master
-   :target: http://travis-ci.org/scrapy-plugins/scrapy-splash
+.. image:: https://github.com/scrapy-plugins/scrapy-splash/workflows/Build/badge.svg
+   :target: https://github.com/scrapy-plugins/scrapy-splash/actions
    :alt: Build Status
 
 .. image:: http://codecov.io/github/scrapy-plugins/scrapy-splash/coverage.svg?branch=master
