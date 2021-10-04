@@ -1,11 +1,12 @@
 import os
 
 import pytest
-from scrapy.settings import Settings
+from .mockserver import MockServer
+from .resources import SplashProtected
 
 
 @pytest.fixture()
-def settings(request):
+def settings():
     """ Default scrapy-splash settings """
     s = dict(
         # collect scraped items to .collected_items attribute
@@ -28,6 +29,12 @@ def settings(request):
         DUPEFILTER_CLASS='scrapy_splash.SplashAwareDupeFilter',
         HTTPCACHE_STORAGE='scrapy_splash.SplashAwareFSCacheStorage',
     )
-    return Settings(s)
+    return s
 
 
+@pytest.fixture()
+def settings_auth(settings):
+    with MockServer(SplashProtected) as s:
+        print("splash url:", s.root_url)
+        settings['SPLASH_URL'] = s.root_url
+        yield settings

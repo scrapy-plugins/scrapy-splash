@@ -3,11 +3,9 @@ import os
 import pytest
 from pytest_twisted import inlineCallbacks
 from twisted.internet.defer import returnValue
-from twisted.web.resource import Resource
 from scrapy.crawler import Crawler
 
-from scrapy_splash.utils import to_bytes
-from tests.mockserver import MockServer
+from .mockserver import MockServer
 
 
 requires_splash = pytest.mark.skipif(
@@ -16,23 +14,14 @@ requires_splash = pytest.mark.skipif(
 )
 
 
-class HtmlResource(Resource):
-    isLeaf = True
-    content_type = 'text/html'
-    html = ''
-    extra_headers = {}
-    status_code = 200
-
-    def render_GET(self, request):
-        request.setHeader(b'content-type', to_bytes(self.content_type))
-        for name, value in self.extra_headers.items():
-            request.setHeader(to_bytes(name), to_bytes(value))
-        request.setResponseCode(self.status_code)
-        return to_bytes(self.html)
-
-
 @inlineCallbacks
-def crawl_items(spider_cls, resource_cls, settings, spider_kwargs=None):
+def crawl_items(
+    spider_cls,
+    resource_cls,
+    settings,
+    spider_kwargs=None,
+    url_path="",
+):
     """ Use spider_cls to crawl resource_cls. URL of the resource is passed
     to the spider as ``url`` argument.
     Return ``(items, resource_url, crawler)`` tuple.
@@ -40,9 +29,11 @@ def crawl_items(spider_cls, resource_cls, settings, spider_kwargs=None):
     spider_kwargs = {} if spider_kwargs is None else spider_kwargs
     crawler = make_crawler(spider_cls, settings)
     with MockServer(resource_cls) as s:
-        root_url = s.root_url
+        print("mock server", s.root_url)
+        root_url = s.root_url + url_path
         yield crawler.crawl(url=root_url, **spider_kwargs)
-    result = crawler.spider.collected_items, s.root_url, crawler
+    items = getattr(crawler.spider, 'collected_items', [])
+    result = items, root_url, crawler
     returnValue(result)
 
 

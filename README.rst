@@ -582,12 +582,31 @@ on Splash server and is not sent with each request (it requires Splash 2.1+)::
 HTTP Basic Auth
 ===============
 
-If you need HTTP Basic Authentication to access Splash, use
-Scrapy's HttpAuthMiddleware_.
+If you need to use HTTP Basic Authentication to access Splash, use the
+``SPLASH_USER`` and ``SPLASH_PASS`` optional settings::
+
+    SPLASH_USER = 'user'
+    SPLASH_PASS = 'userpass'
 
 Another option is ``meta['splash']['splash_headers']``: it allows to set
 custom headers which are sent to Splash server; add Authorization header
-to ``splash_headers`` if HttpAuthMiddleware doesn't fit for some reason.
+to ``splash_headers`` if you want to change credentials per-request::
+
+    import scrapy
+    from w3lib.http import basic_auth_header
+
+    class MySpider(scrapy.Spider):
+        # ...
+        def start_requests(self):
+            auth = basic_auth_header('user', 'userpass')
+            yield SplashRequest(url, self.parse,
+                                splash_headers={'Authorization': auth})
+
+**WARNING:** Don't use :ref:`HttpAuthMiddleware`
+(i.e. ``http_user`` / ``http_pass`` spider attributes) for Splash
+authentication: if you occasionally send a non-Splash request from your spider,
+you may expose Splash credentials to a remote website, as HttpAuthMiddleware
+sets credentials for all requests unconditionally.
 
 .. _HttpAuthMiddleware: http://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpauth
 

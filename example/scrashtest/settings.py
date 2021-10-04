@@ -20,3 +20,4 @@ SPLASH_URL = 'http://127.0.0.1:8050/'
 # SPLASH_URL = 'http://192.168.59.103:8050/'
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
+ROBOTSTXT_OBEY = True
