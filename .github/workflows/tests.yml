@@ -1,0 +1,51 @@
+name: Tests
+on: [push, pull_request]
+
+jobs:
+  tests:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - os: ubuntu-18.04
+          python-version: 2.7
+          env:
+            TOXENV: py27-scrapy10
+        - os: ubuntu-18.04
+          python-version: 2.7
+          env:
+            TOXENV: py27
+        - os: ubuntu-18.04
+          python-version: 3.4
+          env:
+            TOXENV: py
+        - os: ubuntu-18.04
+          python-version: 3.5
+          env:
+            TOXENV: py35
+        - python-version: 3.6
+          env:
+            TOXENV: py
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Splash
+      run: |
+        docker run --rm -d -p 8050:8050 --network host scrapinghub/splash
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Run tests
+      env: ${{ matrix.env }}
+      run: |
+        pip install -U tox
+        SPLASH_URL=http://127.0.0.1:8050 tox
+
+    - name: Upload coverage report
+      run: bash <(curl -s https://codecov.io/bash)
