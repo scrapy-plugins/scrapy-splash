@@ -50,4 +50,4 @@ jobs:
         SPLASH_URL=http://127.0.0.1:8050 tox
 
     - name: Upload coverage report
-      run: bash <(curl -s https://codecov.io/bash)
+      uses: codecov/codecov-action@v2
