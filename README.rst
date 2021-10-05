@@ -602,7 +602,7 @@ to ``splash_headers`` if you want to change credentials per-request::
             yield SplashRequest(url, self.parse,
                                 splash_headers={'Authorization': auth})
 
-**WARNING:** Don't use :ref:`HttpAuthMiddleware`
+**WARNING:** Don't use `HttpAuthMiddleware`_
 (i.e. ``http_user`` / ``http_pass`` spider attributes) for Splash
 authentication: if you occasionally send a non-Splash request from your spider,
 you may expose Splash credentials to a remote website, as HttpAuthMiddleware
