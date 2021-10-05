@@ -6,11 +6,11 @@ Changes
 
 *   **Security bug fix:**
 
-    If you use :ref:`HttpAuthMiddleware` (i.e. the ``http_user`` and
-    ``http_pass`` spider attributes) for Splash authentication, any non-Splash
-    request will expose your credentials to the request target. This includes
-    ``robots.txt`` requests sent by Scrapy when the ``ROBOTSTXT_OBEY`` setting
-    is set to ``True``.
+    If you use ``HttpAuthMiddleware`` (i.e. the ``http_user`` and ``http_pass``
+    spider attributes) for Splash authentication, any non-Splash request will
+    expose your credentials to the request target. This includes ``robots.txt``
+    requests sent by Scrapy when the ``ROBOTSTXT_OBEY`` setting is set to
+    ``True``.
 
     Use the new ``SPLASH_USER`` and ``SPLASH_PASS`` settings instead to set
     your Splash authentication credentials safely.
