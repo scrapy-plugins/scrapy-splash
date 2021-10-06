@@ -80,12 +80,14 @@ class ScrapyAuthSpider(LuaSpider):
     """ Spider with incorrect (old, insecure) auth method """
     http_user = 'user'
     http_pass = 'userpass'
+    http_auth_domain = None
 
 
 class NonSplashSpider(ResponseSpider):
     """ Spider which uses HTTP auth and doesn't use Splash """
     http_user = 'user'
     http_pass = 'userpass'
+    http_auth_domain = None
 
     def start_requests(self):
         yield scrapy.Request(self.url)
