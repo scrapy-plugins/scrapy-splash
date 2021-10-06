@@ -1,6 +1,47 @@
 Changes
 =======
 
+0.8.0 (2021-10-05)
+------------------
+
+*   **Security bug fix:**
+
+    If you use HttpAuthMiddleware_ (i.e. the ``http_user`` and ``http_pass``
+    spider attributes) for Splash authentication, any non-Splash request will
+    expose your credentials to the request target. This includes ``robots.txt``
+    requests sent by Scrapy when the ``ROBOTSTXT_OBEY`` setting is set to
+    ``True``.
+
+    Use the new ``SPLASH_USER`` and ``SPLASH_PASS`` settings instead to set
+    your Splash authentication credentials safely.
+
+    .. _HttpAuthMiddleware: http://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpauth
+
+*   Responses now expose the HTTP status code and headers from Splash as
+    ``response.splash_response_status`` and
+    ``response.splash_response_headers`` (#158)
+
+*   The ``meta`` argument passed to the ``scrapy_splash.request.SplashRequest``
+    constructor is no longer modified (#164)
+
+*   Website responses with 400 or 498 as HTTP status code are no longer
+    handled as the equivalent Splash responses (#158)
+
+*   Cookies are no longer sent to Splash itself (#156)
+
+*   ``scrapy_splash.utils.dict_hash`` now also works with ``obj=None``
+    (``225793b``)
+
+*   Our test suite now includes integration tests (#156) and tests can be run
+    in parallel (``6fb8c41``)
+
+*   There’s a new ‘Getting help’ section in the ``README.rst`` file (#161,
+    #162), the documentation about ``SPLASH_SLOT_POLICY`` has been improved
+    (#157) and a typo as been fixed (#121)
+
+*   Made some internal improvements (``ee5000d``, ``25de545``, ``2aaa79d``)
+
+
 0.7.2 (2017-03-30)
 ------------------
 
