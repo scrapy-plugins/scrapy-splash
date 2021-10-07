@@ -5,7 +5,7 @@ Scrapy & JavaScript integration through Splash
 .. image:: https://img.shields.io/pypi/v/scrapy-splash.svg
    :target: https://pypi.python.org/pypi/scrapy-splash
    :alt: PyPI Version
-   
+
 .. image:: https://github.com/scrapy-plugins/scrapy-splash/workflows/Tests/badge.svg
    :target: https://github.com/scrapy-plugins/scrapy-splash/actions/workflows/tests.yml
    :alt: Test Status
