@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.9.0 (to be released)
+----------------------
+
+* Removed official support for Python 2.7, 3.4, 3.5 and 3.6, and added official
+  support for Python 3.9, 3.10 and 3.11.
+
+* Removed calls to obsolete ``to_native_str``, removed in Scrapy 2.8.
+
 0.8.0 (2021-10-05)
 ------------------
 
