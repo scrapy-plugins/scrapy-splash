@@ -1,8 +1,8 @@
 Changes
 =======
 
-0.9.0 (to be released)
-----------------------
+0.9.0 (2023-02-03)
+------------------
 
 * Removed official support for Python 2.7, 3.4, 3.5 and 3.6, and added official
   support for Python 3.9, 3.10 and 3.11.
