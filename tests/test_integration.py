@@ -340,7 +340,7 @@ def test_access_http_auth(settings):
     items, url, crawler = yield crawl_items(LuaSpider, HelloWorldProtected,
                                             settings, kwargs)
     response = assert_single_response(items)
-    assert 'hello' in response.body_as_unicode()
+    assert 'hello' in response.text
     assert response.status == 200
     assert response.splash_response_status == 200
 
@@ -351,8 +351,8 @@ def test_protected_splash_no_auth(settings_auth):
     items, url, crawler = yield crawl_items(LuaSpider, HelloWorld,
                                             settings_auth)
     response = assert_single_response(items)
-    assert 'Unauthorized' in response.body_as_unicode()
-    assert 'hello' not in response.body_as_unicode()
+    assert 'Unauthorized' in response.text
+    assert 'hello' not in response.text
     assert response.status == 401
     assert response.splash_response_status == 401
 
@@ -367,7 +367,7 @@ def test_protected_splash_manual_headers_auth(settings_auth):
     items, url, crawler = yield crawl_items(LuaSpider, HelloWorld,
                                             settings_auth, kwargs)
     response = assert_single_response(items)
-    assert 'hello' in response.body_as_unicode()
+    assert 'hello' in response.text
     assert response.status == 200
     assert response.splash_response_status == 200
 
@@ -375,7 +375,7 @@ def test_protected_splash_manual_headers_auth(settings_auth):
     items, url, crawler = yield crawl_items(LuaSpider, HelloWorldProtected,
                                             settings_auth, kwargs)
     response = assert_single_response(items)
-    assert 'hello' not in response.body_as_unicode()
+    assert 'hello' not in response.text
     assert response.status == 401
     assert response.splash_response_status == 200
 
@@ -390,8 +390,8 @@ def test_protected_splash_settings_auth(settings_auth):
     items, url, crawler = yield crawl_items(LuaSpider, HelloWorld,
                                             settings_auth)
     response = assert_single_response(items)
-    assert 'Unauthorized' not in response.body_as_unicode()
-    assert 'hello' in response.body_as_unicode()
+    assert 'Unauthorized' not in response.text
+    assert 'hello' in response.text
     assert response.status == 200
     assert response.splash_response_status == 200
 
@@ -418,7 +418,7 @@ def test_protected_splash_settings_auth(settings_auth):
     response = assert_single_response(items)
     assert response.status == 200
     assert response.splash_response_status == 200
-    assert 'hello' in response.body_as_unicode()
+    assert 'hello' in response.text
 
     # enable remote auth, but not splash auth - request should fail
     del settings_auth['SPLASH_USER']
@@ -439,8 +439,8 @@ def test_protected_splash_httpauth_middleware(settings_auth):
     items, url, crawler = yield crawl_items(ScrapyAuthSpider, HelloWorld,
                                             settings_auth)
     response = assert_single_response(items)
-    assert 'Unauthorized' not in response.body_as_unicode()
-    assert 'hello' in response.body_as_unicode()
+    assert 'Unauthorized' not in response.text
+    assert 'hello' in response.text
     assert response.status == 200
     assert response.splash_response_status == 200
 
@@ -449,7 +449,7 @@ def test_protected_splash_httpauth_middleware(settings_auth):
                                             HelloWorldProtected,
                                             settings_auth)
     response = assert_single_response(items)
-    assert 'hello' not in response.body_as_unicode()
+    assert 'hello' not in response.text
     assert response.status == 401
     assert response.splash_response_status == 200
 
@@ -458,7 +458,7 @@ def test_protected_splash_httpauth_middleware(settings_auth):
                                             HelloWorldDisallowAuth,
                                             settings_auth)
     response = assert_single_response(items)
-    assert 'hello' in response.body_as_unicode()
+    assert 'hello' in response.text
     assert response.status == 200
     assert response.splash_response_status == 200
 
@@ -467,7 +467,7 @@ def test_protected_splash_httpauth_middleware(settings_auth):
                                             HelloWorldProtected,
                                             settings_auth)
     response = assert_single_response(items)
-    assert 'hello' in response.body_as_unicode()
+    assert 'hello' in response.text
     assert response.status == 200
     assert not hasattr(response, 'splash_response_status')
 
