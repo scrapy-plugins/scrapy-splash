@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import json
 import base64
 import re
+from warnings import warn
 
 from scrapy.http import Response, TextResponse
 from scrapy import Selector
@@ -126,6 +127,17 @@ class SplashJsonResponse(SplashResponse):
 
     @property
     def text(self):
+        return self._ubody
+
+    def body_as_unicode(self):
+        warn(
+            (
+                "The body_as_unicode() method is deprecated, use the text "
+                "property instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._ubody
 
     @property
