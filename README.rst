@@ -460,7 +460,7 @@ Run a simple `Splash Lua Script`_::
 
         # ...
         def parse_result(self, response):
-            doc_title = response.body_as_unicode()
+            doc_title = response.text
             # ...
 
 

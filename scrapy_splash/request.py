@@ -90,12 +90,10 @@ class SplashRequest(scrapy.Request):
     def _original_method(self):
         return self._splash_args.get('http_method', 'GET')
 
-    def __str__(self):
+    def __repr__(self):
         if not self._processed:
-            return super(SplashRequest, self).__str__()
+            return super().__repr__()
         return "<%s %s via %s>" % (self._original_method, self._original_url, self.url)
-
-    __repr__ = __str__
 
 
 class SplashFormRequest(SplashRequest, FormRequest):

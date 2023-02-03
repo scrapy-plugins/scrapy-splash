@@ -188,7 +188,7 @@ def test_splash_request_parameters():
     assert response2.url == req.meta['splash']['args']['url']
     assert response2.data == res
     assert response2.body == res_body.encode('utf8')
-    assert response2.text == response2.body_as_unicode() == res_body
+    assert response2.text == response2.text == res_body
     assert response2.encoding == 'utf8'
     assert response2.headers == {b'Content-Type': [b'application/json']}
     assert response2.splash_response_headers == response2.headers
