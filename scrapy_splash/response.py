@@ -128,9 +128,6 @@ class SplashJsonResponse(SplashResponse):
     def text(self):
         return self._ubody
 
-    def body_as_unicode(self):
-        return self._ubody
-
     @property
     def _ubody(self):
         if self._cached_ubody is None:
