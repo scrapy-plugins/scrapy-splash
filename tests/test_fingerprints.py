@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import pytest
 import scrapy
-from scrapy.dupefilters import request_fingerprint
+from scrapy.utils.request import request_fingerprint
 
 from scrapy_splash import SplashRequest
 from scrapy_splash.dupefilter import splash_request_fingerprint
