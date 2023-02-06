@@ -87,7 +87,7 @@ Configuration
 
    If you use other cache storage then it is necesary to subclass it and
    replace all ``scrapy.util.request.request_fingerprint`` calls with
-   ``scrapy_splash.splash_request_fingerprint``.
+   ``scrapy_splash.splash_fingerprint``.
 
 .. note::
 

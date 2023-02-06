@@ -10,10 +10,10 @@ import os
 
 from scrapy.extensions.httpcache import FilesystemCacheStorage
 
-from .dupefilter import splash_request_fingerprint
+from .dupefilter import splash_fingerprint
 
 
 class SplashAwareFSCacheStorage(FilesystemCacheStorage):
     def _get_request_path(self, spider, request):
-        key = splash_request_fingerprint(request)
+        key = splash_fingerprint(request)
         return os.path.join(self.cachedir, spider.name, key[0:2], key)

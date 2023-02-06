@@ -81,7 +81,7 @@ Changes
 0.6 (2016-04-20)
 ----------------
 
-* ``SplashAwareDupeFilter`` and ``splash_request_fingerprint`` are improved:
+* ``SplashAwareDupeFilter`` and ``splash_fingerprint`` are improved:
   they now canonicalize URLs and take URL fragments in account;
 * ``cache_args`` value fingerprints are now calculated faster.
 
