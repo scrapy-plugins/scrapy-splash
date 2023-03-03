@@ -15,6 +15,7 @@ import scrapy
 from scrapy.exceptions import NotConfigured, IgnoreRequest
 from scrapy.http.headers import Headers
 from scrapy.http.response.text import TextResponse
+from scrapy.http.response.html import HtmlResponse
 from scrapy import signals
 from scrapy.downloadermiddlewares.robotstxt import RobotsTxtMiddleware
 
@@ -417,19 +418,24 @@ class SplashMiddleware(object):
         return response
 
     def _change_response_class(self, request, response):
-        from scrapy_splash import SplashResponse, SplashTextResponse
-        if not isinstance(response, (SplashResponse, SplashTextResponse)):
+        from scrapy_splash import SplashResponse
+        from scrapy_splash.response import splash_scrapy_text_responses
+        splash_text_response_types = tuple(x for x, y in splash_scrapy_text_responses)
+
+        if not isinstance(response, (SplashResponse, splash_text_response_types)):
             # create a custom Response subclass based on response Content-Type
             # XXX: usually request is assigned to response only when all
             # downloader middlewares are executed. Here it is set earlier.
             # Does it have any negative consequences?
             respcls = responsetypes.from_args(headers=response.headers)
-            if isinstance(response, TextResponse) and respcls is SplashResponse:
+            for splash_cls, scrapy_cls in splash_scrapy_text_responses:
                 # Even if the headers say it's binary, it has already
-                # been detected as a text response by scrapy (for example
+                # been detected as a text/html response by scrapy (for example
                 # because it was decoded successfully), so we should not
                 # convert it to SplashResponse.
-                respcls = SplashTextResponse
+                if isinstance(response, scrapy_cls) and respcls is SplashResponse:
+                    respcls = splash_cls
+                    break
             response = response.replace(cls=respcls, request=request)
         return response
 

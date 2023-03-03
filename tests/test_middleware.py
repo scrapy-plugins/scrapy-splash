@@ -3,11 +3,12 @@ from __future__ import absolute_import
 import copy
 import json
 import base64
+import pytest
 
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
-from scrapy.http import Response, TextResponse
+from scrapy.http import Response, TextResponse, HtmlResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
 import scrapy_splash
@@ -18,6 +19,13 @@ from scrapy_splash import (
     SlotPolicy,
     SplashCookiesMiddleware,
     SplashDeduplicateArgsMiddleware,
+    SplashHtmlResponse,
+    SplashTextResponse,
+)
+
+splash_scrapy_content_types = (
+    (SplashTextResponse, TextResponse, b'text/*'),
+    (SplashHtmlResponse, HtmlResponse, b'text/html'),
 )
 
 
@@ -60,7 +68,11 @@ def test_nosplash():
     assert response3.url == "http://example.com"
 
 
-def test_splash_request():
+@pytest.mark.parametrize(
+    'splash_response_type, scrapy_response_type, content_type',
+    splash_scrapy_content_types,
+)
+def test_splash_request(splash_response_type, scrapy_response_type, content_type):
     mw = _get_mw()
     cookie_mw = _get_cookie_mw()
 
@@ -83,25 +95,26 @@ def test_splash_request():
     assert json.loads(to_unicode(req2.body)) == expected_body
 
     # check response post-processing
-    response = TextResponse("http://127.0.0.1:8050/render.html",
+    response = scrapy_response_type(
+                            url="http://127.0.0.1:8050/render.html",
                             # Scrapy doesn't pass request to constructor
                             # request=req2,
-                            headers={b'Content-Type': b'text/html'},
-                            body=b"<html><body>Hello</body></html>")
+                            headers={b'Content-Type': content_type},
+                            body=b"<html><body>Hello</body></html>", )
     response2 = mw.process_response(req2, response, None)
     response2 = cookie_mw.process_response(req2, response2, None)
-    assert isinstance(response2, scrapy_splash.SplashTextResponse)
+    assert isinstance(response2, splash_response_type)
     assert response2 is not response
     assert response2.real_url == req2.url
     assert response2.url == req.url
     assert response2.body == b"<html><body>Hello</body></html>"
     assert response2.css("body").extract_first() == "<body>Hello</body>"
-    assert response2.headers == {b'Content-Type': [b'text/html']}
+    assert response2.headers == {b'Content-Type': [content_type, ]}
 
     # check .replace method
     response3 = response2.replace(status=404)
     assert response3.status == 404
-    assert isinstance(response3, scrapy_splash.SplashTextResponse)
+    assert isinstance(response3, splash_response_type)
     for attr in ['url', 'real_url', 'headers', 'body']:
         assert getattr(response3, attr) == getattr(response2, attr)
 
