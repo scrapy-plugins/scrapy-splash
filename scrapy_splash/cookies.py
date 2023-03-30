@@ -83,7 +83,7 @@ def har_to_cookie(har_cookie):
         value=har_cookie['value'],
         port=None,
         domain=har_cookie.get('domain', ''),
-        path=har_cookie.get('path', '/'),
+        path=har_cookie.get('path', ''),
         secure=har_cookie.get('secure', False),
         expires=expires_timestamp,
         discard=False,
