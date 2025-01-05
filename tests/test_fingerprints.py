@@ -4,10 +4,9 @@ from copy import deepcopy
 
 import pytest
 import scrapy
-from scrapy.utils.request import request_fingerprint
 
 from scrapy_splash import SplashRequest
-from scrapy_splash.dupefilter import splash_request_fingerprint
+from scrapy_splash.dupefilter import request_fingerprint, splash_request_fingerprint
 from scrapy_splash.utils import dict_hash
 
 from .test_middleware import _get_mw

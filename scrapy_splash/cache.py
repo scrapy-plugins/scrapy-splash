@@ -7,15 +7,18 @@ See https://github.com/scrapy/scrapy/issues/900 for more info.
 """
 from __future__ import absolute_import
 import os
-from warnings import deprecated
+from warnings import warn
 
 from scrapy.extensions.httpcache import FilesystemCacheStorage
 
 from .dupefilter import splash_request_fingerprint
 
 
-@deprecated("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead")
 class SplashAwareFSCacheStorage(FilesystemCacheStorage):
+    def __init__(self, settings):
+        warn("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead", DeprecationWarning, stacklevel=2)
+        super().__init__(settings)
+
     def _get_request_path(self, spider, request):
         key = splash_request_fingerprint(request)
         return os.path.join(self.cachedir, spider.name, key[0:2], key)

@@ -3,9 +3,11 @@ from __future__ import absolute_import
 import copy
 import scrapy
 from scrapy.http import FormRequest
+from scrapy.utils.request import fingerprint
+from scrapy.utils.url import canonicalize_url
 
 from scrapy_splash import SlotPolicy
-from scrapy_splash.utils import to_unicode
+from scrapy_splash.utils import to_unicode, dict_hash
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
@@ -115,3 +117,20 @@ class SplashFormRequest(SplashRequest, FormRequest):
         SplashRequest.__init__(
             self, url=url, callback=callback, method=method, body=body,
             **kwargs)
+
+
+class SplashRequestFingerprinter:
+    def fingerprint(self, request):
+        """ Request fingerprint which takes 'splash' meta key into account """
+
+        fp = fingerprint(request)
+        if 'splash' not in request.meta:
+            return fp
+
+        splash_options = copy.deepcopy(request.meta['splash'])
+        args = splash_options.setdefault('args', {})
+
+        if 'url' in args:
+            args['url'] = canonicalize_url(args['url'], keep_fragments=True)
+
+        return dict_hash(splash_options, fp)

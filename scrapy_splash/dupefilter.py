@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from copy import deepcopy
 import hashlib
 from weakref import WeakKeyDictionary
-from warnings import deprecated
+from warnings import warn
 
 from scrapy.dupefilters import RFPDupeFilter
 
@@ -88,9 +88,9 @@ def request_fingerprint(
     return cache[cache_key]
 
 
-@deprecated("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead")
 def splash_request_fingerprint(request, include_headers=None):
     """ Request fingerprint which takes 'splash' meta key into account """
+    warn("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead", DeprecationWarning, stacklevel=2)
 
     fp = request_fingerprint(request, include_headers=include_headers)
     if 'splash' not in request.meta:
@@ -105,11 +105,13 @@ def splash_request_fingerprint(request, include_headers=None):
     return dict_hash(splash_options, fp)
 
 
-@deprecated("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead")
 class SplashAwareDupeFilter(RFPDupeFilter):
     """
     DupeFilter that takes 'splash' meta key in account.
     It should be used with SplashMiddleware.
     """
+    def __init__(self):
+        warn("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead", DeprecationWarning, stacklevel=2)
+
     def request_fingerprint(self, request):
         return splash_request_fingerprint(request)
