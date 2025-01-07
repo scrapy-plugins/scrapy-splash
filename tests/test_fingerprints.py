@@ -10,6 +10,7 @@ from scrapy_splash.dupefilter import request_fingerprint, splash_request_fingerp
 from scrapy_splash.utils import dict_hash
 
 from .test_middleware import _get_mw
+from scrapy_splash.request import SplashRequestFingerprinter
 
 
 def test_dict_hash():
@@ -76,6 +77,34 @@ def test_request_fingerprint_splash():
 
     # only "splash" contents is taken into account
     assert_fingerprints_match(r2, r4)
+
+
+def assert_fingerprints_match_fingerprinter(fingerprinter, r1, r2):
+    assert fingerprinter.fingerprint(r1) == fingerprinter.fingerprint(r2)
+
+
+def assert_fingerprints_dont_match_fingerprinter(fingerprinter, r1, r2):
+    assert fingerprinter.fingerprint(r1) != fingerprinter.fingerprint(r2)
+
+
+def test_splash_request_fingerprinter():
+    fingerprinter = SplashRequestFingerprinter()
+
+    r1 = scrapy.Request("http://example.com")
+    r2 = scrapy.Request("http://example.com", meta={"splash": {"args": {"html": 1}}})
+    r3 = scrapy.Request("http://example.com", meta={"splash": {"args": {"png": 1}}})
+    r4 = scrapy.Request("http://example.com", meta={"foo": "bar", "splash": {"args": {"html": 1}}})
+    r5 = scrapy.Request("http://example.com", meta={"splash": {"args": {"html": 1, "wait": 1.0}}})
+
+    assert request_fingerprint(r1) == request_fingerprint(r2)
+    assert_fingerprints_dont_match_fingerprinter(fingerprinter, r1, r2)
+    assert_fingerprints_dont_match_fingerprinter(fingerprinter, r1, r3)
+    assert_fingerprints_dont_match_fingerprinter(fingerprinter, r1, r4)
+    assert_fingerprints_dont_match_fingerprinter(fingerprinter, r1, r5)
+    assert_fingerprints_dont_match_fingerprinter(fingerprinter, r2, r3)
+
+    # only "splash" contents is taken into account
+    assert_fingerprints_match_fingerprinter(fingerprinter, r2, r4)
 
 
 @pytest.fixture()
