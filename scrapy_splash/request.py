@@ -133,4 +133,4 @@ class SplashRequestFingerprinter:
         if 'url' in args:
             args['url'] = canonicalize_url(args['url'], keep_fragments=True)
 
-        return dict_hash(splash_options, fp)
+        return dict_hash(splash_options, fp).encode()

@@ -26,8 +26,9 @@ def settings():
         SPIDER_MIDDLEWARES={
             'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
         },
-        DUPEFILTER_CLASS='scrapy_splash.SplashAwareDupeFilter',
-        HTTPCACHE_STORAGE='scrapy_splash.SplashAwareFSCacheStorage',
+        #  DUPEFILTER_CLASS='scrapy_splash.SplashAwareDupeFilter',
+        #  HTTPCACHE_STORAGE='scrapy_splash.SplashAwareFSCacheStorage',
+        REQUEST_FINGERPRINTER_CLASS='scrapy_splash.SplashRequestFingerprinter',
     )
     return s
 
