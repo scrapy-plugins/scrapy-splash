@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import pytest
 import scrapy
-from scrapy.utils.request import request_fingerprint
+from scrapy.utils.request import fingerprint
 
 from scrapy_splash import SplashRequest
 from scrapy_splash.dupefilter import splash_request_fingerprint
@@ -48,9 +48,9 @@ def test_dict_hash_invalid():
 def test_request_fingerprint_nosplash():
     r1 = scrapy.Request("http://example.com")
     r2 = scrapy.Request("http://example.com", meta={"foo": "bar"})
-    assert request_fingerprint(r1) == splash_request_fingerprint(r1)
-    assert request_fingerprint(r1) == request_fingerprint(r2)
-    assert request_fingerprint(r1) == splash_request_fingerprint(r2)
+    assert fingerprint(r1) == splash_request_fingerprint(r1)
+    assert fingerprint(r1) == fingerprint(r2)
+    assert fingerprint(r1) == splash_request_fingerprint(r2)
 
 
 def assert_fingerprints_match(r1, r2):
@@ -68,7 +68,7 @@ def test_request_fingerprint_splash():
     r4 = scrapy.Request("http://example.com", meta={"foo": "bar", "splash": {"args": {"html": 1}}})
     r5 = scrapy.Request("http://example.com", meta={"splash": {"args": {"html": 1, "wait": 1.0}}})
 
-    assert request_fingerprint(r1) == request_fingerprint(r2)
+    assert fingerprint(r1) == fingerprint(r2)
     assert_fingerprints_dont_match(r1, r2)
     assert_fingerprints_dont_match(r1, r3)
     assert_fingerprints_dont_match(r1, r4)
