@@ -7,7 +7,7 @@ import base64
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
-from scrapy.http import Response, TextResponse
+from scrapy.http import Response, TextResponse, JsonResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
 import scrapy_splash
@@ -505,7 +505,7 @@ def test_magic_response_caching(tmpdir):
     cached_resp = cache_mw.process_request(req, spider) or req
 
     # response should be from cache:
-    assert cached_resp.__class__ is TextResponse
+    assert cached_resp.__class__ is JsonResponse
     assert cached_resp.body == resp_body
     resp2_1 = cache_mw.process_response(req, cached_resp, spider)
     resp3_1 = mw.process_response(req, resp2_1, spider)
