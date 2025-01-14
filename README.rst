@@ -75,25 +75,9 @@ Configuration
    also allows to save network traffic by not sending these duplicate
    arguments to Splash server multiple times.
 
-4. Set a custom ``DUPEFILTER_CLASS``::
+4. Set a custom ``REQUEST_FINGERPRINTER_CLASS``::
 
-      DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
-
-5. If you use Scrapy HTTP cache then a custom cache storage backend
-   is required. scrapy-splash provides a subclass of
-   ``scrapy.contrib.httpcache.FilesystemCacheStorage``::
-
-      HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
-
-   If you use other cache storage then it is necesary to subclass it and
-   replace all ``scrapy.util.request.request_fingerprint`` calls with
-   ``scrapy_splash.splash_request_fingerprint``.
-
-.. note::
-
-    Steps (4) and (5) are necessary because Scrapy doesn't provide a way
-    to override request fingerprints calculation algorithm globally; this
-    could change in future.
+      REQUEST_FINGERPRINTER_CLASS = 'scrapy_splash.SplashRequestFingerprinter'
 
 
 There are also some additional options available.
@@ -111,6 +95,7 @@ Put them into your ``settings.py`` if you want to change the defaults:
   It specifies how concurrency & politeness are maintained for Splash requests,
   and specify the default value for ``slot_policy`` argument for
   ``SplashRequest``, which is described below.
+* ``SCRAPY_SPLASH_REQUEST_FINGERPRINTER_BASE_CLASS`` is ``scrapy.settings.default_settings.REQUEST_FINGERPRINTER_CLASS`` by default. This changes the base class the Fingerprinter uses to get a fingerprint.
 
 
 Usage
