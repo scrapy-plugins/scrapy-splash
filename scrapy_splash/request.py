@@ -3,11 +3,20 @@ from __future__ import absolute_import
 import copy
 import scrapy
 from scrapy.http import FormRequest
-from scrapy.utils.request import fingerprint
 from scrapy.utils.url import canonicalize_url
 
 from scrapy_splash import SlotPolicy
 from scrapy_splash.utils import to_unicode, dict_hash
+from scrapy.settings.default_settings import REQUEST_FINGERPRINTER_CLASS
+from scrapy.utils.misc import load_object
+
+try:
+    from scrapy.utils.misc import build_from_crawler
+except ImportError:  # Scrapy < 2.12
+    from scrapy.utils.misc import create_instance
+
+    def build_from_crawler(objcls, crawler, /, *args, **kwargs):
+        return create_instance(objcls, None, crawler, *args, **kwargs)
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
@@ -120,10 +129,21 @@ class SplashFormRequest(SplashRequest, FormRequest):
 
 
 class SplashRequestFingerprinter:
+    def __init__(self, crawler):
+        self._base_request_fingerprinter = build_from_crawler(
+                load_object(
+                    crawler.settings.get(
+                        "SCRAPY_SPLASH_REQUEST_FINGERPRINTER_BASE_CLASS",
+                        REQUEST_FINGERPRINTER_CLASS,
+                    )
+                ),
+                crawler,
+            )
+
     def fingerprint(self, request):
         """ Request fingerprint which takes 'splash' meta key into account """
 
-        fp = fingerprint(request)
+        fp = self._base_request_fingerprinter.fingerprint(request)
         if 'splash' not in request.meta:
             return fp
 
