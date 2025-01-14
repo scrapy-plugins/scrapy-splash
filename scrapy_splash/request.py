@@ -129,6 +129,10 @@ class SplashFormRequest(SplashRequest, FormRequest):
 
 
 class SplashRequestFingerprinter:
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
     def __init__(self, crawler):
         self._base_request_fingerprinter = build_from_crawler(
                 load_object(

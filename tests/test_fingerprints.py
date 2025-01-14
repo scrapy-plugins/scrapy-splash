@@ -10,6 +10,7 @@ from scrapy_splash.dupefilter import request_fingerprint, splash_request_fingerp
 from scrapy_splash.utils import dict_hash
 
 from .test_middleware import _get_mw
+from .utils import make_crawler
 from scrapy_splash.request import SplashRequestFingerprinter
 
 
@@ -87,8 +88,13 @@ def assert_fingerprints_dont_match_fingerprinter(fingerprinter, r1, r2):
     assert fingerprinter.fingerprint(r1) != fingerprinter.fingerprint(r2)
 
 
+class TestSpider(scrapy.Spider):
+    name = 'test_spider'
+
+
 def test_splash_request_fingerprinter():
-    fingerprinter = SplashRequestFingerprinter()
+    crawler = make_crawler(TestSpider, {})
+    fingerprinter = SplashRequestFingerprinter(crawler)
 
     r1 = scrapy.Request("http://example.com")
     r2 = scrapy.Request("http://example.com", meta={"splash": {"args": {"html": 1}}})
