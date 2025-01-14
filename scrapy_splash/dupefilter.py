@@ -90,7 +90,15 @@ def request_fingerprint(
 
 def splash_request_fingerprint(request, include_headers=None):
     """ Request fingerprint which takes 'splash' meta key into account """
-    warn("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead", DeprecationWarning, stacklevel=2)
+    warn(
+        (
+            "scrapy_splash.splash_request_fingerprint is deprecated. Set "
+            "the REQUEST_FINGERPRINTER_CLASS Scrapy setting to "
+            "\"scrapy_splash.SplashRequestFingerprinter\" instead."
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     fp = request_fingerprint(request, include_headers=include_headers)
     if 'splash' not in request.meta:
@@ -110,8 +118,17 @@ class SplashAwareDupeFilter(RFPDupeFilter):
     DupeFilter that takes 'splash' meta key in account.
     It should be used with SplashMiddleware.
     """
+
     def __init__(self):
-        warn("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead", DeprecationWarning, stacklevel=2)
+        warn(
+            (
+                "SplashAwareDupeFilter is deprecated. Set "
+                "the REQUEST_FINGERPRINTER_CLASS Scrapy setting to "
+                "\"scrapy_splash.SplashRequestFingerprinter\" instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     def request_fingerprint(self, request):
         return splash_request_fingerprint(request)

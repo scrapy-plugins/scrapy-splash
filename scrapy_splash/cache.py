@@ -16,7 +16,15 @@ from .dupefilter import splash_request_fingerprint
 
 class SplashAwareFSCacheStorage(FilesystemCacheStorage):
     def __init__(self, settings):
-        warn("Use the REQUEST_FINGERPRINTER_CLASS Scrapy setting instead", DeprecationWarning, stacklevel=2)
+        warn(
+            (
+                "scrapy-splash.SplashAwareFSCacheStorage is deprecated. Set "
+                "the REQUEST_FINGERPRINTER_CLASS Scrapy setting to "
+                "\"scrapy_splash.SplashRequestFingerprinter\" instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(settings)
 
     def _get_request_path(self, spider, request):
