@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.10.0 (2025-01-DD)
+0.10.0 (2025-01-21)
 -------------------
 
 * Removed official support for Python 3.7 and 3.8, and added official support
