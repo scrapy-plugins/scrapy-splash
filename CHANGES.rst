@@ -1,6 +1,21 @@
 Changes
 =======
 
+0.10.0 (2025-01-DD)
+-------------------
+
+* Removed official support for Python 3.7 and 3.8, and added official support
+  for Python 3.12 and 3.13.
+
+* Added support for Scrapy 2.12+.
+
+  This includes deprecating ``SplashAwareDupeFilter`` and
+  ``SplashAwareFSCacheStorage`` in favor of the corresponding built-in, default
+  Scrapy components, and instead using the new ``SplashRequestFingerprinter``
+  component to ensure request fingerprinting for Splash requests stays the
+  same, now for every Scrapy component doing request fingerprinting and not
+  only for duplicate filtering and HTTP caching.
+
 0.9.0 (2023-02-03)
 ------------------
 
