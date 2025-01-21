@@ -1,0 +1,8 @@
+[tool.bumpversion]
+current_version = "0.9.0"
+commit = true
+tag = true
+tag_name = "{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "setup.py"
