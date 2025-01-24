@@ -47,7 +47,9 @@ Configuration
 
 2. Enable the Splash middleware by adding it to ``DOWNLOADER_MIDDLEWARES``
    in your ``settings.py`` file and changing HttpCompressionMiddleware
-   priority::
+   priority:
+
+   .. code:: python
 
       DOWNLOADER_MIDDLEWARES = {
           'scrapy_splash.SplashCookiesMiddleware': 723,
@@ -63,7 +65,9 @@ Configuration
    for details.
 
 3. Enable ``SplashDeduplicateArgsMiddleware`` by adding it to
-   ``SPIDER_MIDDLEWARES`` in your ``settings.py``::
+   ``SPIDER_MIDDLEWARES`` in your ``settings.py``:
+
+   .. code:: python
 
       SPIDER_MIDDLEWARES = {
           'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
@@ -75,7 +79,9 @@ Configuration
    also allows to save network traffic by not sending these duplicate
    arguments to Splash server multiple times.
 
-4. Set a custom ``REQUEST_FINGERPRINTER_CLASS``::
+4. Set a custom ``REQUEST_FINGERPRINTER_CLASS``:
+
+   .. code:: python
 
       REQUEST_FINGERPRINTER_CLASS = 'scrapy_splash.SplashRequestFingerprinter'
 
@@ -105,7 +111,9 @@ Requests
 --------
 
 The easiest way to render requests with Splash is to
-use ``scrapy_splash.SplashRequest``::
+use ``scrapy_splash.SplashRequest``:
+
+.. code:: python
 
     yield SplashRequest(url, self.parse_result,
         args={
@@ -122,7 +130,9 @@ use ``scrapy_splash.SplashRequest``::
     )
 
 Alternatively, you can use regular scrapy.Request and
-``'splash'`` Request `meta` key::
+``'splash'`` Request `meta` key:
+
+.. code:: python
 
     yield scrapy.Request(url, self.parse_result, meta={
         'splash': {
@@ -346,7 +356,9 @@ all request; any value like '1' or 'foo' is fine.
 
 For scrapy-splash session handling to work you must use ``/execute`` endpoint
 and a Lua script which accepts 'cookies' argument and returns 'cookies'
-field in the result::
+field in the result:
+
+.. code:: python
 
    function main(splash)
        splash:init_cookies(splash.args.cookies)
@@ -374,7 +386,9 @@ to add cookies to the current Splash cookiejar.
 Examples
 ========
 
-Get HTML contents::
+Get HTML contents:
+
+.. code:: python
 
     import scrapy
     from scrapy_splash import SplashRequest
@@ -391,7 +405,9 @@ Get HTML contents::
             # contains HTML processed by a browser.
             # ...
 
-Get HTML contents and a screenshot::
+Get HTML contents and a screenshot:
+
+.. code:: python
 
     import json
     import base64
@@ -425,7 +441,9 @@ Get HTML contents and a screenshot::
 
             # ...
 
-Run a simple `Splash Lua Script`_::
+Run a simple `Splash Lua Script`_:
+
+.. code:: python
 
     import json
     import base64
@@ -452,7 +470,9 @@ Run a simple `Splash Lua Script`_::
 
 More complex `Splash Lua Script`_ example - get a screenshot of an HTML
 element by its CSS selector (it requires Splash 2.1+).
-Note how are arguments passed to the script::
+Note how are arguments passed to the script:
+
+.. code:: python
 
     import json
     import base64
@@ -513,7 +533,9 @@ Note how are arguments passed to the script::
 
 Use a Lua script to get an HTML response with cookies, headers, body
 and method set to correct values; ``lua_source`` argument value is cached
-on Splash server and is not sent with each request (it requires Splash 2.1+)::
+on Splash server and is not sent with each request (it requires Splash 2.1+):
+
+.. code:: python
 
     import scrapy
     from scrapy_splash import SplashRequest
@@ -601,7 +623,9 @@ Why not use the Splash HTTP API directly?
 
 The obvious alternative to scrapy-splash would be to send requests directly
 to the Splash `HTTP API`_. Take a look at the example below and make
-sure to read the observations after it::
+sure to read the observations after it:
+
+.. code:: python
 
     import json
 
