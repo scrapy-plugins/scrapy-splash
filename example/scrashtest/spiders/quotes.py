@@ -10,8 +10,10 @@ class QuotesSpider(scrapy.Spider):
     allowed_domains = ["toscrape.com"]
     start_urls = ['http://quotes.toscrape.com/']
 
-    # http_user = 'splash-user'
-    # http_pass = 'splash-password'
+    #custom_settings = {
+        #'SPLASH_USER': 'splash-user',
+        #'SPLASH_PASS': 'splash-password',
+    #}
 
     def parse(self, response):
         le = LinkExtractor()

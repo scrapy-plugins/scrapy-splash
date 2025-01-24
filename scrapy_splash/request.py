@@ -3,9 +3,20 @@ from __future__ import absolute_import
 import copy
 import scrapy
 from scrapy.http import FormRequest
+from scrapy.utils.url import canonicalize_url
 
 from scrapy_splash import SlotPolicy
-from scrapy_splash.utils import to_native_str
+from scrapy_splash.utils import to_unicode, dict_hash
+from scrapy.settings.default_settings import REQUEST_FINGERPRINTER_CLASS
+from scrapy.utils.misc import load_object
+
+try:
+    from scrapy.utils.misc import build_from_crawler
+except ImportError:  # Scrapy < 2.12
+    from scrapy.utils.misc import create_instance
+
+    def build_from_crawler(objcls, crawler, /, *args, **kwargs):
+        return create_instance(objcls, None, crawler, *args, **kwargs)
 
 # XXX: we can't implement SplashRequest without middleware support
 # because there is no way to set Splash URL based on settings
@@ -20,7 +31,7 @@ class SplashRequest(scrapy.Request):
     It requires SplashMiddleware to work.
     """
     def __init__(self,
-                 url=None,
+                 url,
                  callback=None,
                  method='GET',
                  endpoint='render.html',
@@ -37,9 +48,7 @@ class SplashRequest(scrapy.Request):
                  meta=None,
                  **kwargs):
 
-        if url is None:
-            url = 'about:blank'
-        url = to_native_str(url)
+        url = to_unicode(url)
 
         meta = copy.deepcopy(meta) or {}
         splash_meta = meta.setdefault('splash', {})
@@ -92,12 +101,10 @@ class SplashRequest(scrapy.Request):
     def _original_method(self):
         return self._splash_args.get('http_method', 'GET')
 
-    def __str__(self):
+    def __repr__(self):
         if not self._processed:
-            return super(SplashRequest, self).__str__()
+            return super().__repr__()
         return "<%s %s via %s>" % (self._original_method, self._original_url, self.url)
-
-    __repr__ = __str__
 
 
 class SplashFormRequest(SplashRequest, FormRequest):
@@ -119,3 +126,35 @@ class SplashFormRequest(SplashRequest, FormRequest):
         SplashRequest.__init__(
             self, url=url, callback=callback, method=method, body=body,
             **kwargs)
+
+
+class SplashRequestFingerprinter:
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+    def __init__(self, crawler):
+        self._base_request_fingerprinter = build_from_crawler(
+                load_object(
+                    crawler.settings.get(
+                        "SCRAPY_SPLASH_REQUEST_FINGERPRINTER_BASE_CLASS",
+                        REQUEST_FINGERPRINTER_CLASS,
+                    )
+                ),
+                crawler,
+            )
+
+    def fingerprint(self, request):
+        """ Request fingerprint which takes 'splash' meta key into account """
+
+        fp = self._base_request_fingerprinter.fingerprint(request)
+        if 'splash' not in request.meta:
+            return fp
+
+        splash_options = copy.deepcopy(request.meta['splash'])
+        args = splash_options.setdefault('args', {})
+
+        if 'url' in args:
+            args['url'] = canonicalize_url(args['url'], keep_fragments=True)
+
+        return dict_hash(splash_options, fp).encode()

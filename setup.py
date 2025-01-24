@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='scrapy-splash',
-    version='0.7.2',
+    version='0.10.0',
     url='https://github.com/scrapy-plugins/scrapy-splash',
     description='JavaScript support for Scrapy using Splash',
     long_description=open('README.rst').read() + "\n\n" + open("CHANGES.rst").read(),
@@ -30,5 +30,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    requires=['scrapy', 'six'],
+    install_requires=['scrapy', 'six'],
 )
