@@ -3,7 +3,7 @@
 To handle "splash" Request meta key properly a custom DupeFilter must be set.
 See https://github.com/scrapy/scrapy/issues/900 for more info.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 from copy import deepcopy
 import hashlib
 from weakref import WeakKeyDictionary
