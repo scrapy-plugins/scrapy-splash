@@ -344,7 +344,7 @@ In order to support sessions the following is required:
 2. Splash script should make requests using these cookies and update
    them from HTTP response headers or JavaScript code;
 3. updated cookies should be sent back to the client;
-4. client should merge current cookies wiht the updated cookies.
+4. client should merge current cookies with the updated cookies.
 
 For (2) and (3) Splash provides ``splash:get_cookies()`` and
 ``splash:init_cookies()`` methods which can be used in Splash Lua scripts.
@@ -699,7 +699,7 @@ aware of:
     send proper ``save_args`` and ``load_args`` values and handle HTTP 498
     responses.
 
-scrapy-splash utlities allow to handle such edge cases and reduce
+scrapy-splash utilities allow to handle such edge cases and reduce
 the boilerplate.
 
 .. _HTTP API: http://splash.readthedocs.org/en/latest/api.html
