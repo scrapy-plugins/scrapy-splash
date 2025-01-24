@@ -7,7 +7,7 @@ import base64
 import scrapy
 from scrapy.core.engine import ExecutionEngine
 from scrapy.utils.test import get_crawler
-from scrapy.http import Response, TextResponse
+from scrapy.http import Response, TextResponse, JsonResponse
 from scrapy.downloadermiddlewares.httpcache import HttpCacheMiddleware
 
 import scrapy_splash
@@ -32,8 +32,8 @@ def _get_crawler(settings_dict):
     return crawler
 
 
-def _get_mw():
-    crawler = _get_crawler({})
+def _get_mw(settings_dict=None):
+    crawler = _get_crawler(settings_dict or {})
     return SplashMiddleware.from_crawler(crawler)
 
 
@@ -70,6 +70,7 @@ def test_splash_request():
     # check request preprocessing
     req2 = cookie_mw.process_request(req, None) or req
     req2 = mw.process_request(req2, None) or req2
+
     assert req2 is not None
     assert req2 is not req
     assert req2.url == "http://127.0.0.1:8050/render.html"
@@ -139,7 +140,9 @@ def test_splash_request_parameters():
         headers={'X-My-Header': 'value'}
     )
     req2 = cookie_mw.process_request(req, None) or req
-    req2 = mw.process_request(req2, None)
+    req2 = mw.process_request(req2, None) or req2
+
+    assert req2.meta['ajax_crawlable'] is True
     assert req2.meta['splash'] == {
         'endpoint': 'execute',
         'splash_url': "http://mysplash.example.com",
@@ -185,7 +188,7 @@ def test_splash_request_parameters():
     assert response2.url == req.meta['splash']['args']['url']
     assert response2.data == res
     assert response2.body == res_body.encode('utf8')
-    assert response2.text == response2.body_as_unicode() == res_body
+    assert response2.text == response2.text == res_body
     assert response2.encoding == 'utf8'
     assert response2.headers == {b'Content-Type': [b'application/json']}
     assert response2.splash_response_headers == response2.headers
@@ -348,7 +351,7 @@ def test_magic_response2():
     mw = _get_mw()
     req = SplashRequest('http://example.com/', magic_response=True,
                         headers={'foo': 'bar'}, dont_send_headers=True)
-    req = mw.process_request(req, None)
+    req = mw.process_request(req, None) or req
     assert 'headers' not in req.meta['splash']['args']
 
     resp_data = {
@@ -372,7 +375,7 @@ def test_unicode_url():
     req = SplashRequest(
         # note unicode URL
         u"http://example.com/", endpoint='execute')
-    req2 = mw.process_request(req, None)
+    req2 = mw.process_request(req, None) or req
     res = {'html': '<html><body>Hello</body></html>'}
     res_body = json.dumps(res)
     response = TextResponse("http://mysplash.example.com/execute",
@@ -387,7 +390,7 @@ def test_unicode_url():
 def test_magic_response_http_error():
     mw = _get_mw()
     req = SplashRequest('http://example.com/foo')
-    req = mw.process_request(req, None)
+    req = mw.process_request(req, None) or req
 
     resp_data = {
         "info": {
@@ -414,7 +417,7 @@ def test_magic_response_http_error():
 def test_change_response_class_to_text():
     mw = _get_mw()
     req = SplashRequest('http://example.com/', magic_response=True)
-    req = mw.process_request(req, None)
+    req = mw.process_request(req, None) or req
     # Such response can come when downloading a file,
     # or returning splash:html(): the headers say it's binary,
     # but it can be decoded so it becomes a TextResponse.
@@ -437,7 +440,7 @@ def test_change_response_class_to_json_binary():
     # but this is ok because magic_response presumes we are expecting
     # a valid splash json response.
     req = SplashRequest('http://example.com/', magic_response=False)
-    req = mw.process_request(req, None)
+    req = mw.process_request(req, None) or req
     resp = Response('http://mysplash.example.com/execute',
                     headers={b'Content-Type': b'application/json'},
                     body=b'non-decodable data: \x98\x11\xe7\x17\x8f',
@@ -474,7 +477,7 @@ def test_magic_response_caching(tmpdir):
     # first call
     req = _get_req()
     req = cookie_mw.process_request(req, spider) or req
-    req = mw.process_request(req, spider)
+    req = mw.process_request(req, spider) or req
     req = cache_mw.process_request(req, spider) or req
     assert isinstance(req, scrapy.Request)  # first call; the cache is empty
 
@@ -498,11 +501,11 @@ def test_magic_response_caching(tmpdir):
     # second call
     req = _get_req()
     req = cookie_mw.process_request(req, spider) or req
-    req = mw.process_request(req, spider)
+    req = mw.process_request(req, spider) or req
     cached_resp = cache_mw.process_request(req, spider) or req
 
     # response should be from cache:
-    assert cached_resp.__class__ is TextResponse
+    assert cached_resp.__class__ is JsonResponse
     assert cached_resp.body == resp_body
     resp2_1 = cache_mw.process_response(req, cached_resp, spider)
     resp3_1 = mw.process_response(req, resp2_1, spider)
@@ -651,6 +654,7 @@ def test_override_splash_url():
         }
     })
     req = mw.process_request(req1, None)
+    req = mw.process_request(req, None) or req
     assert req.url == 'http://splash.example.com/render.png'
     assert json.loads(to_unicode(req.body)) == {'url': req1.url}
 
@@ -661,7 +665,7 @@ def test_url_with_fragment():
     req = scrapy.Request("http://example.com", meta={
         'splash': {'args': {'url': url}}
     })
-    req = mw.process_request(req, None)
+    req = mw.process_request(req, None) or req
     assert json.loads(to_unicode(req.body)) == {'url': url}
 
 
@@ -669,7 +673,7 @@ def test_splash_request_url_with_fragment():
     mw = _get_mw()
     url = "http://example.com#id1"
     req = SplashRequest(url)
-    req = mw.process_request(req, None)
+    req = mw.process_request(req, None) or req
     assert json.loads(to_unicode(req.body)) == {'url': url}
 
 
@@ -725,7 +729,7 @@ def test_slot_policy_per_domain():
 
 def test_slot_policy_scrapy_default():
     mw = _get_mw()
-    req = scrapy.Request("http://example.com", meta = {'splash': {
+    req = scrapy.Request("http://example.com", meta={'splash': {
         'slot_policy': scrapy_splash.SlotPolicy.SCRAPY_DEFAULT
     }})
     req = mw.process_request(req, None)
@@ -734,7 +738,7 @@ def test_slot_policy_scrapy_default():
 
 def test_adjust_timeout():
     mw = _get_mw()
-    req1 = scrapy.Request("http://example.com", meta = {
+    req1 = scrapy.Request("http://example.com", meta={
         'splash': {'args': {'timeout': 60, 'html': 1}},
 
         # download_timeout is always present,
@@ -744,9 +748,32 @@ def test_adjust_timeout():
     req1 = mw.process_request(req1, None)
     assert req1.meta['download_timeout'] > 60
 
-    req2 = scrapy.Request("http://example.com", meta = {
+    req2 = scrapy.Request("http://example.com", meta={
         'splash': {'args': {'html': 1}},
         'download_timeout': 30,
     })
     req2 = mw.process_request(req2, None)
     assert req2.meta['download_timeout'] == 30
+
+
+def test_auth():
+    def assert_auth_header(user, pwd, header):
+        mw = _get_mw({'SPLASH_USER': user, 'SPLASH_PASS': pwd})
+        req = mw.process_request(SplashRequest("http://example.com"), None)
+        assert 'Authorization' in req.headers
+        assert req.headers['Authorization'] == header
+
+    def assert_no_auth_header(user, pwd):
+        if user is not None or pwd is not None:
+            mw = _get_mw({'SPLASH_USER': user, 'SPLASH_PASS': pwd})
+        else:
+            mw = _get_mw()
+        req = mw.process_request(SplashRequest("http://example.com"), None)
+        assert 'Authorization' not in req.headers
+
+    assert_auth_header('root', '', b'Basic cm9vdDo=')
+    assert_auth_header('root', 'pwd', b'Basic cm9vdDpwd2Q=')
+    assert_auth_header('', 'pwd', b'Basic OnB3ZA==')
+
+    assert_no_auth_header('', '')
+    assert_no_auth_header(None, None)

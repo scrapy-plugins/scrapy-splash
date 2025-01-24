@@ -1,0 +1,38 @@
+name: Tests
+on: [push, pull_request]
+
+jobs:
+  tests:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - python-version: '3.9'
+        - python-version: '3.10'
+        - python-version: '3.11'
+        - python-version: '3.12'
+        - python-version: '3.13'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Splash
+      run: |
+        docker run --rm -d -p 8050:8050 --network host scrapinghub/splash
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Run tests
+      env:
+        TOXENV: py
+      run: |
+        pip install -U tox
+        SPLASH_URL=http://127.0.0.1:8050 tox
+
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v2

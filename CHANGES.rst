@@ -1,6 +1,73 @@
 Changes
 =======
 
+0.10.0 (2025-01-21)
+-------------------
+
+* Removed official support for Python 3.7 and 3.8, and added official support
+  for Python 3.12 and 3.13.
+
+* Added support for Scrapy 2.12+.
+
+  This includes deprecating ``SplashAwareDupeFilter`` and
+  ``SplashAwareFSCacheStorage`` in favor of the corresponding built-in, default
+  Scrapy components, and instead using the new ``SplashRequestFingerprinter``
+  component to ensure request fingerprinting for Splash requests stays the
+  same, now for every Scrapy component doing request fingerprinting and not
+  only for duplicate filtering and HTTP caching.
+
+0.9.0 (2023-02-03)
+------------------
+
+* Removed official support for Python 2.7, 3.4, 3.5 and 3.6, and added official
+  support for Python 3.9, 3.10 and 3.11.
+
+* Deprecated ``SplashJsonResponse.body_as_unicode()``, to be replaced by
+  ``SplashJsonResponse.text``.
+
+* Removed calls to obsolete ``to_native_str``, removed in Scrapy 2.8.
+
+0.8.0 (2021-10-05)
+------------------
+
+*   **Security bug fix:**
+
+    If you use HttpAuthMiddleware_ (i.e. the ``http_user`` and ``http_pass``
+    spider attributes) for Splash authentication, any non-Splash request will
+    expose your credentials to the request target. This includes ``robots.txt``
+    requests sent by Scrapy when the ``ROBOTSTXT_OBEY`` setting is set to
+    ``True``.
+
+    Use the new ``SPLASH_USER`` and ``SPLASH_PASS`` settings instead to set
+    your Splash authentication credentials safely.
+
+    .. _HttpAuthMiddleware: http://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpauth
+
+*   Responses now expose the HTTP status code and headers from Splash as
+    ``response.splash_response_status`` and
+    ``response.splash_response_headers`` (#158)
+
+*   The ``meta`` argument passed to the ``scrapy_splash.request.SplashRequest``
+    constructor is no longer modified (#164)
+
+*   Website responses with 400 or 498 as HTTP status code are no longer
+    handled as the equivalent Splash responses (#158)
+
+*   Cookies are no longer sent to Splash itself (#156)
+
+*   ``scrapy_splash.utils.dict_hash`` now also works with ``obj=None``
+    (``225793b``)
+
+*   Our test suite now includes integration tests (#156) and tests can be run
+    in parallel (``6fb8c41``)
+
+*   There’s a new ‘Getting help’ section in the ``README.rst`` file (#161,
+    #162), the documentation about ``SPLASH_SLOT_POLICY`` has been improved
+    (#157) and a typo as been fixed (#121)
+
+*   Made some internal improvements (``ee5000d``, ``25de545``, ``2aaa79d``)
+
+
 0.7.2 (2017-03-30)
 ------------------
 

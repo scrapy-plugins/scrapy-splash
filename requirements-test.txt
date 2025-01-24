@@ -1,6 +1,0 @@
-pytest >= 3.3.2
-pytest-cov >= 2.5.1
-pytest-twisted >= 1.6
-pytest-xdist >= 1.22
-hypothesis >= 3.44.14
-hypothesis-pytest

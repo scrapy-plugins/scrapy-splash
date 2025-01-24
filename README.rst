@@ -6,9 +6,9 @@ Scrapy & JavaScript integration through Splash
    :target: https://pypi.python.org/pypi/scrapy-splash
    :alt: PyPI Version
 
-.. image:: https://travis-ci.org/scrapy-plugins/scrapy-splash.svg?branch=master
-   :target: http://travis-ci.org/scrapy-plugins/scrapy-splash
-   :alt: Build Status
+.. image:: https://github.com/scrapy-plugins/scrapy-splash/workflows/Tests/badge.svg
+   :target: https://github.com/scrapy-plugins/scrapy-splash/actions/workflows/tests.yml
+   :alt: Test Status
 
 .. image:: http://codecov.io/github/scrapy-plugins/scrapy-splash/coverage.svg?branch=master
    :target: http://codecov.io/github/scrapy-plugins/scrapy-splash?branch=master
@@ -79,29 +79,11 @@ Configuration
    also allows to save network traffic by not sending these duplicate
    arguments to Splash server multiple times.
 
-4. Set a custom ``DUPEFILTER_CLASS``:
+4. Set a custom ``REQUEST_FINGERPRINTER_CLASS``:
 
    .. code:: python
 
-      DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
-
-5. If you use Scrapy HTTP cache then a custom cache storage backend
-   is required. scrapy-splash provides a subclass of
-   ``scrapy.contrib.httpcache.FilesystemCacheStorage``:
-
-   .. code:: python
-
-      HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
-
-   If you use other cache storage then it is necesary to subclass it and
-   replace all ``scrapy.util.request.request_fingerprint`` calls with
-   ``scrapy_splash.splash_request_fingerprint``.
-
-.. note::
-
-    Steps (4) and (5) are necessary because Scrapy doesn't provide a way
-    to override request fingerprints calculation algorithm globally; this
-    could change in future.
+      REQUEST_FINGERPRINTER_CLASS = 'scrapy_splash.SplashRequestFingerprinter'
 
 
 There are also some additional options available.
@@ -110,7 +92,7 @@ Put them into your ``settings.py`` if you want to change the defaults:
 * ``SPLASH_COOKIES_DEBUG`` is ``False`` by default.
   Set to ``True`` to enable debugging cookies in the ``SplashCookiesMiddleware``.
   This option is similar to ``COOKIES_DEBUG``
-  for the built-in scarpy cookies middleware: it logs sent and received cookies
+  for the built-in Scrapy cookies middleware: it logs sent and received cookies
   for all requests.
 * ``SPLASH_LOG_400`` is ``True`` by default - it instructs to log all 400 errors
   from Splash. They are important because they show errors occurred
@@ -119,6 +101,7 @@ Put them into your ``settings.py`` if you want to change the defaults:
   It specifies how concurrency & politeness are maintained for Splash requests,
   and specify the default value for ``slot_policy`` argument for
   ``SplashRequest``, which is described below.
+* ``SCRAPY_SPLASH_REQUEST_FINGERPRINTER_BASE_CLASS`` is ``scrapy.settings.default_settings.REQUEST_FINGERPRINTER_CLASS`` by default. This changes the base class the Fingerprinter uses to get a fingerprint.
 
 
 Usage
@@ -435,6 +418,7 @@ Get HTML contents and a screenshot:
 
         # ...
             splash_args = {
+                'wait': 1,
                 'html': 1,
                 'png': 1,
                 'width': 600,
@@ -480,7 +464,7 @@ Run a simple `Splash Lua Script`_:
 
         # ...
         def parse_result(self, response):
-            doc_title = response.body_as_unicode()
+            doc_title = response.text
             # ...
 
 
@@ -606,12 +590,31 @@ on Splash server and is not sent with each request (it requires Splash 2.1+):
 HTTP Basic Auth
 ===============
 
-If you need HTTP Basic Authentication to access Splash, use
-Scrapy's HttpAuthMiddleware_.
+If you need to use HTTP Basic Authentication to access Splash, use the
+``SPLASH_USER`` and ``SPLASH_PASS`` optional settings::
+
+    SPLASH_USER = 'user'
+    SPLASH_PASS = 'userpass'
 
 Another option is ``meta['splash']['splash_headers']``: it allows to set
 custom headers which are sent to Splash server; add Authorization header
-to ``splash_headers`` if HttpAuthMiddleware doesn't fit for some reason.
+to ``splash_headers`` if you want to change credentials per-request::
+
+    import scrapy
+    from w3lib.http import basic_auth_header
+
+    class MySpider(scrapy.Spider):
+        # ...
+        def start_requests(self):
+            auth = basic_auth_header('user', 'userpass')
+            yield SplashRequest(url, self.parse,
+                                splash_headers={'Authorization': auth})
+
+**WARNING:** Don't use `HttpAuthMiddleware`_
+(i.e. ``http_user`` / ``http_pass`` spider attributes) for Splash
+authentication: if you occasionally send a non-Splash request from your spider,
+you may expose Splash credentials to a remote website, as HttpAuthMiddleware
+sets credentials for all requests unconditionally.
 
 .. _HttpAuthMiddleware: http://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpauth
 
