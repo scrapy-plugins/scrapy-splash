@@ -395,6 +395,7 @@ Get HTML contents:
     from scrapy_splash import SplashRequest
 
     class MySpider(scrapy.Spider):
+        name = "MySpider"
         start_urls = ["http://example.com", "http://example.com/foo"]
 
         def start_requests(self):
