@@ -10,11 +10,13 @@ from collections import defaultdict
 from six.moves.urllib.parse import urljoin
 from six.moves.http_cookiejar import CookieJar
 
+from w3lib.http import basic_auth_header
 import scrapy
-from scrapy.exceptions import NotConfigured
+from scrapy.exceptions import NotConfigured, IgnoreRequest
 from scrapy.http.headers import Headers
 from scrapy.http.response.text import TextResponse
 from scrapy import signals
+from scrapy.downloadermiddlewares.robotstxt import RobotsTxtMiddleware
 
 from scrapy_splash.responsetypes import responsetypes
 from scrapy_splash.cookies import jar_to_har, har_to_jar
@@ -222,26 +224,34 @@ class SplashMiddleware(object):
     retry_498_priority_adjust = +50
     remote_keys_key = '_splash_remote_keys'
 
-    def __init__(self, crawler, splash_base_url, slot_policy, log_400):
+    def __init__(self, crawler, splash_base_url, slot_policy, log_400, auth):
         self.crawler = crawler
         self.splash_base_url = splash_base_url
         self.slot_policy = slot_policy
         self.log_400 = log_400
         self.crawler.signals.connect(self.spider_opened, signals.spider_opened)
+        self.auth = auth
 
     @classmethod
     def from_crawler(cls, crawler):
-        splash_base_url = crawler.settings.get('SPLASH_URL',
-                                               cls.default_splash_url)
-        log_400 = crawler.settings.getbool('SPLASH_LOG_400', True)
-        slot_policy = crawler.settings.get('SPLASH_SLOT_POLICY',
-                                           cls.default_policy)
+        s = crawler.settings
+        splash_base_url = s.get('SPLASH_URL', cls.default_splash_url)
+        log_400 = s.getbool('SPLASH_LOG_400', True)
+        slot_policy = s.get('SPLASH_SLOT_POLICY', cls.default_policy)
         if slot_policy not in SlotPolicy._known:
             raise NotConfigured("Incorrect slot policy: %r" % slot_policy)
 
-        return cls(crawler, splash_base_url, slot_policy, log_400)
+        splash_user = s.get('SPLASH_USER', '')
+        splash_pass = s.get('SPLASH_PASS', '')
+        auth = None
+        if splash_user or splash_pass:
+            auth = basic_auth_header(splash_user, splash_pass)
+        return cls(crawler, splash_base_url, slot_policy, log_400, auth)
 
     def spider_opened(self, spider):
+        if _http_auth_enabled(spider):
+            replace_downloader_middleware(self.crawler, RobotsTxtMiddleware,
+                                          SafeRobotsTxtMiddleware)
         if not hasattr(spider, 'state'):
             spider.state = {}
 
@@ -260,21 +270,24 @@ class SplashMiddleware(object):
     def process_request(self, request, spider):
         if 'splash' not in request.meta:
             return
+        splash_options = request.meta['splash']
 
         if request.method not in {'GET', 'POST'}:
-            logger.warning(
+            logger.error(
                 "Currently only GET and POST requests are supported by "
-                "SplashMiddleware; %(request)s will be handled without Splash",
+                "SplashMiddleware; %(request)s is dropped",
                 {'request': request},
                 extra={'spider': spider}
             )
-            return request
+            self.crawler.stats.inc_value('splash/dropped/method/{}'.format(
+                request.method))
+            raise IgnoreRequest("SplashRequest doesn't support "
+                                "HTTP {} method".format(request.method))
 
         if request.meta.get("_splash_processed"):
             # don't process the same request more than once
             return
 
-        splash_options = request.meta['splash']
         request.meta['_splash_processed'] = True
 
         slot_policy = splash_options.get('slot_policy', self.slot_policy)
@@ -319,6 +332,10 @@ class SplashMiddleware(object):
         if not splash_options.get('dont_send_headers'):
             headers = scrapy_headers_to_unicode_dict(request.headers)
             if headers:
+                # Headers set by HttpAuthMiddleware should be used for Splash,
+                # not for the remote website (backwards compatibility).
+                if _http_auth_enabled(spider):
+                    headers.pop('Authorization', None)
                 args.setdefault('headers', headers)
 
         body = json.dumps(args, ensure_ascii=False, sort_keys=True, indent=4)
@@ -353,6 +370,8 @@ class SplashMiddleware(object):
         splash_url = urljoin(splash_base_url, endpoint)
 
         headers = Headers({'Content-Type': 'application/json'})
+        if self.auth is not None:
+            headers['Authorization'] = self.auth
         headers.update(splash_options.get('splash_headers', {}))
         new_request = request.replace(
             url=splash_url,
@@ -361,6 +380,7 @@ class SplashMiddleware(object):
             headers=headers,
             priority=request.priority + self.rescheduling_priority_adjust
         )
+        new_request.meta['dont_obey_robotstxt'] = True
         self.crawler.stats.inc_value('splash/%s/request_count' % endpoint)
         return new_request
 
@@ -478,3 +498,39 @@ class SplashMiddleware(object):
         return self.crawler.engine.downloader._get_slot_key(
             request_or_response, None
         )
+
+
+class SafeRobotsTxtMiddleware(RobotsTxtMiddleware):
+    def process_request(self, request, spider):
+        # disable robots.txt for Splash requests
+        if _http_auth_enabled(spider) and 'splash' in request.meta:
+            return
+        return super(SafeRobotsTxtMiddleware, self).process_request(
+            request, spider)
+
+
+def _http_auth_enabled(spider):
+    # FIXME: this function should always return False if HttpAuthMiddleware is
+    # not in a middleware list.
+    return getattr(spider, 'http_user', '') or getattr(spider, 'http_pass', '')
+
+
+def replace_downloader_middleware(crawler, old_cls, new_cls):
+    """ Replace downloader middleware with another one """
+    try:
+        new_mw = new_cls.from_crawler(crawler)
+    except NotConfigured:
+        return
+
+    mw_manager = crawler.engine.downloader.middleware
+    mw_manager.middlewares = tuple([
+        mw if mw.__class__ is not old_cls else new_mw
+        for mw in mw_manager.middlewares
+    ])
+    for method_name, callbacks in mw_manager.methods.items():
+        for idx, meth in enumerate(callbacks):
+            method_cls = meth.__self__.__class__
+            if method_cls is old_cls:
+                new_meth = getattr(new_mw, method_name)
+                # logger.debug("{} is replaced with {}".format(meth, new_meth))
+                callbacks[idx] = new_meth
