@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.10.1 (YYYY-MM-DD)
+-------------------
+
+* Fixed ``SplashAwareDupeFilter`` failing to initialize.
+
+* Improved the README.
+
 0.10.0 (2025-01-21)
 -------------------
 

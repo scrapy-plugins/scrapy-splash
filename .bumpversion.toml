@@ -5,4 +5,9 @@ tag = true
 tag_name = "{new_version}"
 
 [[tool.bumpversion.files]]
+filename = 'CHANGES.rst'
+search = "YYYY-MM-DD"
+replace = "{now:%Y-%m-%d}"
+
+[[tool.bumpversion.files]]
 filename = "setup.py"
