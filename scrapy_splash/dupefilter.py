@@ -3,7 +3,7 @@
 To handle "splash" Request meta key properly a custom DupeFilter must be set.
 See https://github.com/scrapy/scrapy/issues/900 for more info.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 from copy import deepcopy
 import hashlib
 from weakref import WeakKeyDictionary
@@ -13,6 +13,7 @@ from scrapy.dupefilters import RFPDupeFilter
 
 from scrapy.utils.python import to_bytes
 from scrapy.utils.url import canonicalize_url
+from scrapy.utils.request import RequestFingerprinterProtocol
 
 from .utils import dict_hash
 
@@ -119,7 +120,13 @@ class SplashAwareDupeFilter(RFPDupeFilter):
     It should be used with SplashMiddleware.
     """
 
-    def __init__(self):
+    def __init__(
+            self,
+            path: str | None = None,
+            debug: bool = False,
+            *,
+            fingerprinter: RequestFingerprinterProtocol | None = None
+    ):
         warn(
             (
                 "SplashAwareDupeFilter is deprecated. Set "
@@ -129,6 +136,7 @@ class SplashAwareDupeFilter(RFPDupeFilter):
             DeprecationWarning,
             stacklevel=2,
         )
+        super().__init__(path, debug, fingerprinter)
 
     def request_fingerprint(self, request):
         return splash_request_fingerprint(request)
