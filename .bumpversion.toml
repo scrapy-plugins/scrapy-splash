@@ -6,8 +6,9 @@ tag_name = "{new_version}"
 
 [[tool.bumpversion.files]]
 filename = 'CHANGES.rst'
-search = "YYYY-MM-DD"
-replace = "{now:%Y-%m-%d}"
+search = "\\(unreleased\\)$"
+replace = "({now:%Y-%m-%d})"
+regex = true
 
 [[tool.bumpversion.files]]
 filename = "setup.py"

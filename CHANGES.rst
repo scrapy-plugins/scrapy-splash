@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.10.1 (YYYY-MM-DD)
+0.10.1 (unreleased)
 -------------------
 
 * Fixed ``SplashAwareDupeFilter`` failing to initialize.
