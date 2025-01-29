@@ -30,5 +30,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    install_requires=['scrapy', 'six'],
+    install_requires=['scrapy>=2.4', 'six'],
 )
