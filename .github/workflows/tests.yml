@@ -35,4 +35,7 @@ jobs:
         SPLASH_URL=http://127.0.0.1:8050 tox
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
