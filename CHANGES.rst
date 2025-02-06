@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.11.0 (unreleased)
+-------------------
+
+* Scrapy 2.4 or higher is now required.
+
+* The ``url`` parameter of ``SplashRequest`` is once again optional, reverting
+  a backward-incompatible change from scrapy-splash 0.9.0.
+
 0.10.1 (2025-01-27)
 -------------------
 
