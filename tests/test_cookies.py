@@ -18,3 +18,14 @@ def test_cookie_to_har():
     assert cookie_to_har(har_to_cookie(har_cookie)) == har_cookie
     cookie = har_to_cookie(har_cookie)
     assert vars(cookie) == vars(har_to_cookie(cookie_to_har(cookie)))
+
+
+def test_cookie_to_har_minimum_data():
+    har_cookie = {
+        "name": "TestCookie",
+        "value": "Cookie Value",
+        "secure": True,
+    }
+    assert cookie_to_har(har_to_cookie(har_cookie)) == har_cookie
+    cookie = har_to_cookie(har_cookie)
+    assert vars(cookie) == vars(har_to_cookie(cookie_to_har(cookie)))
