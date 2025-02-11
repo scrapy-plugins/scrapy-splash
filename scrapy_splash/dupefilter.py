@@ -136,7 +136,7 @@ class SplashAwareDupeFilter(RFPDupeFilter):
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(path, debug, fingerprinter)
+        super().__init__(path, debug, fingerprinter=fingerprinter)
 
     def request_fingerprint(self, request):
         return splash_request_fingerprint(request)
