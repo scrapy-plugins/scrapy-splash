@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.11.1 (unreleased)
+-------------------
+
+* Fixed ``SplashAwareDupeFilter`` failing to initialize.
+
 0.11.0 (2025-02-06)
 -------------------
 
